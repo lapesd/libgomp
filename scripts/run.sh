@@ -16,33 +16,47 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 # 
-# CLASS
-CLASS=CLASS_A
 
-NUM_BUCKETS_LOG_2=3
+#
+# $1: Number of threads.
+# $2: Is simultaneous multithreading (SMT) enabled?
+#
 
-# Executable file.
-EXEC = is
+BINDIR=$PWD/bin
+LIBDIR=$PWD/src/libgomp/libgomp/build/.libs
 
-# Class.
-CFLAGS += -DCLASS=$(CLASS) -DNUM_BUCKETS_LOG_2=$(NUM_BUCKETS_LOG_2)
+#
+# Maps threads on the cores.
+#
+# $1 Number of threads.
+#
+function map_threads
+{
+	# Build thread map.
+	if [ $2 == "true" ]; then
+		for (( i=0; i<$1; i++ )); do
+			AFFINITY[$i]=$((2*$i))
+		done
+	else
+		for (( i=0; i<$1; i++ )); do
+			AFFINITY[$i]=$i
+		done
+	fi
+	
+	export OMP_NUM_THREADS=$1
+	export GOMP_CPU_AFFINITY="${map[@]}"
+}
 
-# Builds static version.
-static:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_STATIC_ -o $(BINDIR)/$(EXEC).static $(LIBS)
 
-# Builds dynamic version.
-dynamic:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_DYNAMIC_ -o $(BINDIR)/$(EXEC).dynamic $(LIBS)
+map_threads $1 $2
 
-# Builds guided version.
-guided:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_GUIDED_ -o $(BINDIR)/$(EXEC).guided $(LIBS)
-
-# Builds smart-round-robin version.
-smart-round-robin:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_SRR_ -o $(BINDIR)/$(EXEC).srr $(LIBS)
-
-# Cleans compilation files.
-clean:
-	rm -f $(BINDIR)/$(EXEC).*
+for kernel in is; do
+	for strategy in static dynamic guided srr; do 
+		echo "== Running $strategy"
+		for (( nthreads=0; nthreads<=$1; nthreads++ )); do
+			LD_LIBRARY_PATH=$LIBDIR  \
+			OMP_SCHEDULE="$strategy" \
+			$BINDIR/$kernel.$strategy
+		done
+	done
+done
