@@ -1,0 +1,50 @@
+Copyright(C) 2015-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+  
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+  
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+  
+
+                                  SCHEDULER
+
+ABOUT
+
+	This repository contains an enhanced implementation of LibGOMP,
+	which features the following extras:
+	
+		* The Smart Round Robin loop scheduling strategy
+
+	In addition, we ship several scientific benchmark kernels, so 
+	that one can assess the performance of our enhanced LibGOMP 
+	library:
+
+		* is.* IS Kernel derived from the NASA Parallel Benchmarks
+		  suite
+
+BUILDING
+
+	To build this project execute the following commands:
+	
+		$ cd contrib            # Change the current directory to 'contrib'.
+		$ bash setup-contrib.sh # Build third-party tools.
+		$ cd ..                 # Go back to the project's root directory.
+		$ make libgomp          # Build the modified version of LibGOMP.
+		$ make                  # Build software suite.
+		$ bash tools/run.sh     # Runs scientific benchmark kernels.
+
+LICENSE AND MAINTAINERS
+
+	This is an open source software that is under GPL V3 license and is
+	maintained by Pedro H. Penna. Any questions or suggestions send an email
+	to him: <pedrohenriquepenna@gmail.com>.
