@@ -1,0 +1,9 @@
+*.o
+*.lo
+bin/
+contrib/bin
+contrib/include
+contrib/lib
+contrib/man
+contrib/share
+src/libgomp/libgomp/build

@@ -1,5 +1,5 @@
 #
-# Copyright(C) 2015 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+# Copyright(C) 2015-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,16 +15,34 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
-#  
+# 
 
 # Directories.
-export BINDIR = $(CURDIR)/bin
-export LIBDIR = $(CURDIR)/lib
-export SRCDIR = $(CURDIR)/src
+export BINDIR     = $(CURDIR)/bin
+export CONTRIBDIR = $(CURDIR)/contrib
+export LIBDIR     = $(CURDIR)/lib
+export SRCDIR     = $(CURDIR)/src
+
+# Libraries.
+export LIBS += $(SRCDIR)/libgomp/libgomp/build/.libs/libgomp.a
+
+# Toolchain.
+export CC = gcc
+
+# Toolchain configuration.
+export CFLAGS  = -I $(CONTRIBDIR)/include
+export CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200809L
+export CFLAGS += -pedantic -Wall -Wextra -Werror -fopenmp
+export CFLAGS += -O3
 
 
 # Builds everything.
-all: libgomp
+all: kernels
+
+# Builds kernels.
+kernels:
+	mkdir -p $(BINDIR)
+	cd $(SRCDIR) && $(MAKE) kernels
 
 # Builds libgomp.
 libgomp:

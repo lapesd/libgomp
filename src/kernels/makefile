@@ -17,28 +17,25 @@
 # MA 02110-1301, USA.
 #
 
-# Phony list.
-.PHONY: kernels
-.PHONY: libgomp
+all: static guided dynamic smart-round-robin
 
-# Builds everything.
-all: kernels
+# Builds static kernels.
+static:
+	cd is && $(MAKE) static
 
-# Builds kernels.
-kernels:
-	cd kernels && $(MAKE) all
+# Builds dynamic kernels.
+dynamic:
+	cd is && $(MAKE) dynamic
 
-# Builds libgomp.
-libgomp:
-	cd libgomp/libgomp/build ; \
-	CFLAGS="" LIBS="" PREFIX="" ../configure --disable-multilib ; \
-	$(MAKE)
+# Builds guided kernels.
+guided:
+	cd is && $(MAKE) guided
 
-# Cleans libgomp.
-libgomp-clean:
-	cd libgomp/libgomp/build ; \
-	$(MAKE) distclean
-	
-# Cleans everything.
+# Builds smark-round-robin kernels.
+smart-round-robin:
+	cd is && $(MAKE) smart-round-robin
+
+# Cleans compilation files.
 clean:
-	cd kernels && $(MAKE) clean
+	cd is && $(MAKE) clean
+

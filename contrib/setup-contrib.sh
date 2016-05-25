@@ -17,28 +17,12 @@
 # MA 02110-1301, USA.
 #
 
-# Phony list.
-.PHONY: kernels
-.PHONY: libgomp
+tar -xjvf papi-5.4.1.tar.bz2
+cd papi-5.4.1/src
+./configure --prefix=$PWD/../../
+make -j 4
+make install
+cd ../../
+rm -rf papi-5.4.1/
 
-# Builds everything.
-all: kernels
 
-# Builds kernels.
-kernels:
-	cd kernels && $(MAKE) all
-
-# Builds libgomp.
-libgomp:
-	cd libgomp/libgomp/build ; \
-	CFLAGS="" LIBS="" PREFIX="" ../configure --disable-multilib ; \
-	$(MAKE)
-
-# Cleans libgomp.
-libgomp-clean:
-	cd libgomp/libgomp/build ; \
-	$(MAKE) distclean
-	
-# Cleans everything.
-clean:
-	cd kernels && $(MAKE) clean
