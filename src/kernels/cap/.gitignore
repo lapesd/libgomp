@@ -1,0 +1,20 @@
+#
+# Copyright (C) 2014 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+#
+
+# Default rules.
+*.o
+*.a
+bin/*
+x86/bin/*
+mppa256/bin/*
+mppa256/src/FAST/output/*
+mppa256/src/FN/output/*
+mppa256/src/GF/output/*
+mppa256/src/IS/output/*
+mppa256/src/KM/output/*
+mppa256/src/LU/output/*
+*.img
+
+# Exceptions.
+!bin/.gitignore
