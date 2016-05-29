@@ -4,13 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-#ifdef OMP_OFFLOAD
-#pragma omp declare target
-#endif
 #include <cmath>
-#ifdef OMP_OFFLOAD
-#pragma omp end declare target
-#endif
 
 #include <omp.h>
 
@@ -68,9 +62,6 @@ void dealloc(T* array)
 	delete[] array;
 }
 
-#ifdef OMP_OFFLOAD
-#pragma omp declare target
-#endif
 template <typename T>
 void copy(T* dst, T* src, int N)
 {
@@ -80,9 +71,6 @@ void copy(T* dst, T* src, int N)
 		dst[i] = src[i];
 	}
 }
-#ifdef OMP_OFFLOAD
-#pragma omp end declare target
-#endif
 
 
 void dump(float* variables, int nel, int nelr)
@@ -123,9 +111,6 @@ void initialize_variables(int nelr, float* variables, float* ff_variable)
 	}
 }
 
-#ifdef OMP_OFFLOAD
-#pragma omp declare target
-#endif
 inline void compute_flux_contribution(float& density, float3& momentum, float& density_energy, float& pressure, float3& velocity, float3& fc_momentum_x, float3& fc_momentum_y, float3& fc_momentum_z, float3& fc_density_energy)
 {
 	fc_momentum_x.x = velocity.x*momentum.x + pressure;
@@ -363,20 +348,13 @@ void time_step(int j, int nelr, float* old_variables, float* variables, float* s
         }
     }
 }
-#ifdef OMP_OFFLOAD
-#pragma omp end declare target
-#endif
+
 /*
  * Main function
  */
 int main(int argc, char** argv)
 {
-	if (argc < 2)
-	{
-		std::cout << "specify data file name" << std::endl;
-		return 0;
-	}
-	const char* data_file_name = argv[1];
+	const char* data_file_name = "data/cfd/fvcorr.domn.097K";
 
         float ff_variable[NVAR];
         float3 ff_flux_contribution_momentum_x, ff_flux_contribution_momentum_y, ff_flux_contribution_momentum_z, ff_flux_contribution_density_energy;
@@ -470,9 +448,6 @@ int main(int argc, char** argv)
 	std::cout << "Starting..." << std::endl;
 #ifdef _OPENMP
 	double start = omp_get_wtime();
-    #ifdef OMP_OFFLOAD
-        #pragma omp target map(alloc: old_variables[0:(nelr*NVAR)]) map(to: nelr, areas[0:nelr], step_factors[0:nelr], elements_surrounding_elements[0:(nelr*NNB)], normals[0:(NDIM*NNB*nelr)], fluxes[0:(nelr*NVAR)], ff_variable[0:NVAR], ff_flux_contribution_momentum_x, ff_flux_contribution_momentum_y, ff_flux_contribution_momentum_z, ff_flux_contribution_density_energy) map(variables[0:(nelr*NVAR)])
-    #endif
 #endif
 	// Begin iterations
 	for(int i = 0; i < iterations; i++)

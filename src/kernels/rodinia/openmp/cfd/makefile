@@ -1,46 +1,39 @@
-CUDA_SDK_PATH = /af10/sc5nf/NVIDIA_CUDA_SDK
+#
+# Copyright(C) 2015-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#  
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#  
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301, USA.
+#
 
 OMP_NUM_THREADS = 8
-MIC_OMP_NUM_THREADS = 216
 
-all: euler3d_cpu euler3d_cpu_double pre_euler3d_cpu pre_euler3d_cpu_double euler3d_cpu_offload
+CFLAGS += -Wno-unused-result
 
-#euler3d: euler3d.cu
-#	nvcc -Xptxas -v -O3 --gpu-architecture=compute_13 --gpu-code=compute_13 euler3d.cu -o euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib  -lcutil
+EXEC = cfd
 
-#euler3d_double: euler3d_double.cu
-#	nvcc -Xptxas -v -O3 --gpu-architecture=compute_13 --gpu-code=compute_13 euler3d_double.cu -o euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib  -lcutil
+# Builds everything.
+all: profile static
 
-euler3d_cpu: euler3d_cpu.cpp
-	g++ -O3 -Dblock_length=$(OMP_NUM_THREADS) -fopenmp euler3d_cpu.cpp -o euler3d_cpu
+# Builds static version.
+static:
+	$(CXX) $(CFLAGS) -D_SCHEDULE_STATIC_ -Dblock_length=$(OMP_NUM_THREADS) -fopenmp euler3d_cpu.cpp -o $(BINDIR)/$(EXEC).static $(LIBS)
 
-euler3d_cpu_offload:
-	icc -g -O3 -DOMP_OFFLOAD -Dblock_length=$(MIC_OMP_NUM_THREADS) -fopenmp -offload-option,mic,compiler,"-no-opt-prefetch" euler3d_cpu.cpp -o euler3d_cpu_offload
+# Builds profile version.
+profile:
+	$(CXX) $(CFLAGS) -D_SCHEDULE_PROFILE_ -Dblock_length=$(OMP_NUM_THREADS) -fopenmp euler3d_cpu.cpp  -o $(BINDIR)/$(EXEC).profile $(LIBS)
 
-euler3d_cpu_double: euler3d_cpu_double.cpp
-	g++ -O3 -Dblock_length=$(OMP_NUM_THREADS) -fopenmp euler3d_cpu_double.cpp -o euler3d_cpu_double
-
-#pre_euler3d: pre_euler3d.cu
-#	nvcc -Xptxas -v -O3 --gpu-architecture=compute_13 --gpu-code=compute_13 pre_euler3d.cu -o pre_euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib  -lcutil
-
-#pre_euler3d_double: pre_euler3d_double.cu
-#	nvcc -Xptxas -v -O3 --gpu-architecture=compute_13 --gpu-code=compute_13 pre_euler3d_double.cu -o pre_euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib  -lcutil
-
-pre_euler3d_cpu: pre_euler3d_cpu.cpp
-	g++ -O3 -Dblock_length=$(OMP_NUM_THREADS) -fopenmp pre_euler3d_cpu.cpp -o pre_euler3d_cpu
-
-pre_euler3d_cpu_double: pre_euler3d_cpu_double.cpp
-	g++ -O3 -Dblock_length=$(OMP_NUM_THREADS) -fopenmp pre_euler3d_cpu_double.cpp -o pre_euler3d_cpu_double
-
-
+# Cleans compilation files.
 clean:
-#	rm -f euler3d
-	rm -f euler3d_cpu
-	rm -f euler3d_cpu_offload
-#	rm -f euler3d_double
-	rm -f euler3d_cpu_double
-
-#	rm -f pre_euler3d
-	rm -f pre_euler3d_cpu
-#	rm -f pre_euler3d_double
-	rm -f pre_euler3d_cpu_double
+	rm -f $(BINDIR)/$(EXEC).*
