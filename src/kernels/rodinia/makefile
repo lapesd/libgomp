@@ -6,7 +6,7 @@ all: OMP
 
 OMP:
 	mkdir -p  $(BINDIR)
-	cd openmp/backprop && $(MAKE)
+	cd openmp/backprop && $(MAKE) all
 #	cd openmp/bfs && $(MAKE)
 #	cd openmp/cfd && $(MAKE)
 #	cd openmp/heartwall && $(MAKE)
@@ -27,4 +27,4 @@ OMP:
 clean: OMP_clean
 
 OMP_clean:
-	rm -f $(BINDIR)/*
+	cd openmp/backprop && $(MAKE) clean
