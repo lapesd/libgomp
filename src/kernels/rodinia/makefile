@@ -3,6 +3,7 @@ export BINDIR = $(CURDIR)/bin
 
 # Toolchain.
 export CC = gcc
+export CXX = g++
 
 # Toolchain configuration.
 export CFLAGS += -fopenmp
@@ -17,7 +18,7 @@ all: OMP
 OMP:
 	mkdir -p  $(BINDIR)
 	cd openmp/backprop && $(MAKE) all
-#	cd openmp/bfs && $(MAKE)
+	cd openmp/bfs && $(MAKE) all
 #	cd openmp/cfd && $(MAKE)
 #	cd openmp/heartwall && $(MAKE)
 #	cd openmp/hotspot && $(MAKE)
@@ -38,3 +39,4 @@ clean: OMP_clean
 
 OMP_clean:
 	cd openmp/backprop && $(MAKE) clean
+	cd openmp/bfs && $(MAKE) clean
