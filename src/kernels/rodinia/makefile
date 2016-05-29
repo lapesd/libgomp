@@ -1,6 +1,16 @@
-include common/make.config
-
+# Directories.
 export BINDIR = $(CURDIR)/bin
+
+# Toolchain.
+export CC = gcc
+
+# Toolchain configuration.
+export CFLAGS += -fopenmp
+export CFLAGS += -O3
+
+# Libraries.
+export LIBS += $(CURDIR)/../../libgomp/libgomp/build/.libs/libgomp.a
+export LIBS += -lm
 
 all: OMP
 

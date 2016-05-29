@@ -4,6 +4,8 @@
 #include "backprop.h"
 #include "omp.h"
 
+#define N 10000000
+
 extern char *strcpy();
 extern void exit();
 
@@ -28,12 +30,7 @@ int setup(argc, argv)
 int argc;
 char *argv[];
 {
-  if(argc!=2){
-  fprintf(stderr, "usage: backprop <num of input elements>\n");
-  exit(0);
-  }
-
-  layer_size = atoi(argv[1]);
+  layer_size = N;
   
   int seed;
 
