@@ -27,4 +27,4 @@ OMP:
 clean: OMP_clean
 
 OMP_clean:
-	rm -f $(OMP_BIN_DIR)/*
+	rm -f $(BINDIR)/*
