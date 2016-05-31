@@ -143,7 +143,7 @@ void mst_clustering(struct point *points, int npoints)
 		densities[i] = 0;
 	for (int i = 0; i < npoints; i++)
 	{
-		int j = (int)floor((points[i].x + xmin)/range) + 1;
+		int j = (int)floor((points[i].x - xmin)/range) + 1;
 		
 		/* Fix rounding error. */
 		if (j > NR_REGIONS)
@@ -162,7 +162,7 @@ void mst_clustering(struct point *points, int npoints)
 	#pragma omp parallel for schedule(dynamic)
 #endif
 	for(int i = 1; i <= NR_REGIONS; i++)
-		mst(&points[densities[i -1 ]], densities[i]);
+		mst(&points[densities[i - 1]], densities[i]);
 		
 	profile_end();
 	
