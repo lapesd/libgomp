@@ -31,7 +31,7 @@
  * 
  * @details Numberof regions. Adjust this to improve cache locality.
  */
-#define NREGIONS 32
+#define NR_REGIONS 32
 
 inline static int distance(struct point p0, struct point p1)
 {
@@ -124,9 +124,9 @@ static int point_cmp(const void *p1, const void *p2)
  */
 void mst_clustering(struct point *points, int npoints)
 {
-	double range;                /* Region range.                    */
-	double xmin, xmax;           /* Min. and max for x.              */
-	int densities[NREGIONS + 1]; /* Numbe rof points in each region. */
+	double range;                  /* Region range.                    */
+	double xmin, xmax;             /* Min. and max for x.              */
+	int densities[NR_REGIONS + 1]; /* Number of points in each region. */
 	
 	/* Sort points according to x coordinate. */
 	qsort(points, npoints, sizeof(struct point), point_cmp);
@@ -136,8 +136,8 @@ void mst_clustering(struct point *points, int npoints)
 	xmax = points[npoints - 1].x;
 	
 	/* Compute densities. */
-	range = (xmax - xmin)/NREGIONS;
-	memset(densities, 0, NREGIONS*sizeof(int));
+	range = (xmax - xmin)/NR_REGIONS;
+	memset(densities, 0, NR_REGIONS*sizeof(int));
 	for (int i = 0; i < npoints; i++)
 		densities[((int)ceil(points[i].x/range)) + 1]++;
 	
@@ -148,6 +148,6 @@ void mst_clustering(struct point *points, int npoints)
 #elif defined(_SCHEDULE_DYNAMIC_)
 	#pragma omp parallel for schedule(dynamic)
 #endif
-	for(int i = 1; i <= NREGIONS; i++)
+	for(int i = 1; i <= NR_REGIONS; i++)
 		mst(&points[densities[i - 1]], densities[i]);
 }

@@ -66,6 +66,7 @@ static struct point *readinput(const char *filename, int *npoints)
 static void usage(void)
 {
 	printf("Usage: mst input\n");
+	printf("Brief: MST clustering kernel\n");
 	exit(EXIT_SUCCESS);
 }
 

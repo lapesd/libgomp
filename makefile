@@ -24,8 +24,10 @@ export LIBDIR     = $(CURDIR)/lib
 export SRCDIR     = $(CURDIR)/src
 
 # Libraries.
-export LIBS += $(SRCDIR)/libgomp/libgomp/build/.libs/libgomp.a
+export LIBS += $(CONTRIBDIR)/lib/libgsl.a
+export LIBS += $(CONTRIBDIR)/lib/libgslcblas.a
 export LIBS += $(CONTRIBDIR)/lib/libpapi.a
+export LIBS += $(SRCDIR)/libgomp/libgomp/build/.libs/libgomp.a
 export LIBS += -lm
 
 # Toolchain.
@@ -39,12 +41,9 @@ export CFLAGS += -O3
 
 
 # Builds everything.
-all: kernels
-
-# Builds kernels.
-kernels:
+all: 
 	mkdir -p $(BINDIR)
-	cd $(SRCDIR) && $(MAKE) kernels
+	cd $(SRCDIR) && $(MAKE) all
 
 # Builds libgomp.
 libgomp:

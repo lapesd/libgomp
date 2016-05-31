@@ -1,5 +1,5 @@
 #
-# Copyright(C) 2015 Pedro H. Penna <pedrohenriquepenna@gmail.com
+# Copyright(C) 2016 Pedro H. Penna <pedrohenriquepenna@gmail.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,4 +41,5 @@ smart-round-robin:
 # Cleans compilation files.
 clean:
 	cd is && $(MAKE) clean
+	cd mst && $(MAKE) clean
 

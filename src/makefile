@@ -18,15 +18,20 @@
 #
 
 # Phony list.
+.PHONY: generators
 .PHONY: kernels
 .PHONY: libgomp
 
 # Builds everything.
-all: kernels
+all: generators kernels
 
 # Builds kernels.
 kernels:
 	cd kernels && $(MAKE) all
+
+# Builds input data generators.
+generators:
+	cd generators && $(MAKE) all
 
 # Builds libgomp.
 libgomp:
@@ -41,4 +46,5 @@ libgomp-clean:
 	
 # Cleans everything.
 clean:
+	cd generators && $(MAKE) clean
 	cd kernels && $(MAKE) clean
