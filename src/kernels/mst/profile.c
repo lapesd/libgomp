@@ -26,7 +26,7 @@
 /**
  * @brief Number of events to profile.
  */
-#define NR_EVENTS 4
+#define NR_EVENTS 5
 
 /**
  * @brief Events to profile.
@@ -35,7 +35,8 @@ static int events[NR_EVENTS] = {
 	PAPI_L1_DCM, /* L1 data cache misses.   */
 	PAPI_L2_DCM, /* L2 data cache misses.   */
 	PAPI_L2_DCA, /* L2 data cache accesses. */
-	PAPI_L3_DCA  /* L3 daca cache accesses. */
+	PAPI_L3_DCA, /* L3 daca cache accesses. */
+	PAPI_TOT_CYC /* Total cycles.           */
 };
 
 /**
@@ -71,4 +72,5 @@ void profile_dump(void)
 	fprintf(stderr, "L2 Misses: %lld\n", hwcounters[1]);
 	fprintf(stderr, "L2 Accesses: %lld\n", hwcounters[2]);
 	fprintf(stderr, "L3 Accesses: %lld\n", hwcounters[3]);
+	fprintf(stderr, "Total Cycles: %lld\n", hwcounters[4]);
 }

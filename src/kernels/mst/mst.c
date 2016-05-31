@@ -22,7 +22,7 @@
 #include <math.h>
 #include <omp.h>
 #include <float.h>
-#include <stdio.h>
+#include <profile.h>
 
 #include "util.h"
 #include "mst.h"
@@ -152,6 +152,8 @@ void mst_clustering(struct point *points, int npoints)
 		densities[j]++;
 	}
 
+	profile_start();
+
 #if defined(_SCHEDULE_STATIC_)
 	#pragma omp parallel for schedule(static)
 #elif defined(_SCHEDULE_GUIDED_)
@@ -161,4 +163,8 @@ void mst_clustering(struct point *points, int npoints)
 #endif
 	for(int i = 1; i <= NR_REGIONS; i++)
 		mst(&points[densities[i -1 ]], densities[i]);
+		
+	profile_end();
+	
+	profile_dump();
 }
