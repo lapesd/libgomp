@@ -22,6 +22,7 @@
 
 	#include <stdlib.h>
 	
+	/* Forward definitions. */
 	extern void *smalloc(size_t);
 	extern void error(const char *);
 

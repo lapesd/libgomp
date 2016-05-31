@@ -21,8 +21,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/*
- * Safe malloc().
+/**
+ * @brief Safe maloc().
+ * 
+ * @param n Number of bytes to allocate.
+ * 
+ * @returns A pointer to the allocated memory block.
  */
 void *smalloc(size_t n)
 {
@@ -34,8 +38,10 @@ void *smalloc(size_t n)
 	return (p);
 }
 
-/*
- * Prints an error message and exits.
+/**
+ * @brief Prints and error message and exits.
+ * 
+ * @param msg Error message.
  */
 void error(const char *msg)
 {
