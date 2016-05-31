@@ -9,12 +9,11 @@
 #include <string.h>
 #include <time.h>
 
-#include <avilib.h>
-#include <avimod.h>
+#include "avilib.h"
+#include "avimod.h"
 #include <omp.h>
 
-#include "define.c"
-#include "kernel.c"
+#include "kernel.h"
 
 
 //===============================================================================================================================================================================================================200
@@ -60,7 +59,7 @@ void write_data(	char* filename,
 	for(j=0; j<frames_processed;j++)
 	  {
 	    fprintf(fid, "\n---Frame %d---",j);
-	    fprintf(fid, "\n--endo--\n",j);
+	    fprintf(fid, "\n--endo--\n");
 	    for(i=0; i<endoPoints; i++){
 	      fprintf(fid, "%d\t", input_a[j+i*frameNo]);
 	    }
@@ -69,7 +68,7 @@ void write_data(	char* filename,
 	      // if(input_b[j*size+i] > 2000) input_b[j*size+i]=0;
 	      fprintf(fid, "%d\t", input_b[j+i*frameNo]);
 	    }
-	    fprintf(fid, "\n--epi--\n",j);
+	    fprintf(fid, "\n--epi--\n");
 	    for(i=0; i<epiPoints; i++){
 	      //if(input_2a[j*size_2+i] > 2000) input_2a[j*size_2+i]=0;
 	      fprintf(fid, "%d\t", input_2a[j+i*frameNo]);
@@ -87,7 +86,7 @@ void write_data(	char* filename,
 	fclose(fid);
 
 }
-
+#define N 100
 //===============================================================================================================================================================================================================
 //===============================================================================================================================================================================================================
 //	MAIN FUNCTION
@@ -114,13 +113,7 @@ int main(int argc, char *argv []){
 
  	
 	
-	if(argc!=4){
-		printf("ERROR: usage: heartwall <inputfile> <num of frames> <num of threads>\n");
-		exit(1);
-	}
-	
-	char* video_file_name;
-	video_file_name = argv[1];
+	char* video_file_name = "data/heartwall/test.avi";
 	
 	avi_t* d_frames = (avi_t*)AVI_open_input_file(video_file_name, 1);														// added casting
 	if (d_frames == NULL)  {
@@ -140,20 +133,12 @@ int main(int argc, char *argv []){
 	//======================================================================================================================================================
 
 	
-	frames_processed = atoi(argv[2]);
+	frames_processed = N;
 	if(frames_processed<0 || frames_processed>public.frames){
 		printf("ERROR: %d is an incorrect number of frames specified, select in the range of 0-%d\n", frames_processed, public.frames);
 		return 0;
 	}
 	
-	int omp_num_threads;
-	omp_num_threads = atoi(argv[3]);
-	if (omp_num_threads <=0){
-	   printf ("num of threads must be a positive integer");
-	   return 0;
-	}
-	
-	printf("num of threads: %d\n", omp_num_threads);
 	
 	//======================================================================================================================================================
 	//	INPUTS
@@ -542,11 +527,9 @@ int main(int argc, char *argv []){
 	//====================================================================================================
 	//	PROCESSING
 	//====================================================================================================
-
-		omp_set_num_threads(omp_num_threads);
-		
-
-		#pragma omp parallel for
+	
+		omp_set_num_threads(1);
+		#pragma omp parallel for schedule(runtime)
 		for(i=0; i<public.allPoints; i++){
 			kernel(	public,
 						private[i]);

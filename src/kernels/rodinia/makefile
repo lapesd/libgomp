@@ -22,7 +22,7 @@
 #   - BP: backpropagation training
 #   + BFS: breadth-first search
 #   + CFD: 3D euler equation solver
-#
+#   + HEARTWALL: image processing
 
 # Directories.
 export BINDIR = $(CURDIR)/bin
@@ -46,7 +46,7 @@ OMP:
 	cd openmp/backprop && $(MAKE) all
 	cd openmp/bfs && $(MAKE) all
 	cd openmp/cfd && $(MAKE) all
-#	cd openmp/heartwall && $(MAKE)
+	cd openmp/heartwall && $(MAKE) all
 #	cd openmp/hotspot && $(MAKE)
 #	cd openmp/kmeans/kmeans_openmp && $(MAKE)
 #	cd openmp/lavaMD && $(MAKE)
