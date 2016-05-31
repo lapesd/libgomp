@@ -156,6 +156,7 @@ int main(int argc, const char **argv)
 	r = gsl_rng_alloc(T);
 	
 	/* Generate input data. */
+	printf("%d\n", args.npoints);
 	for (int i = 0; i < args.npoints; i++)
 	{
 		double x, y;
