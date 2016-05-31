@@ -29,6 +29,7 @@
 	};
 	
 	
+	
 	extern void mst(struct point *, int);
 
 #endif /* _MST_H_ */

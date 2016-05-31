@@ -86,3 +86,24 @@ void mst(struct point *data, int n)
 	free(from);
 	pqueue_destroy(frontier);
 }
+
+void mst(struct point *data)
+{
+	
+	
+	
+#if defined(_SCHEDULE_STATIC_)
+	#pragma omp parallel for schedule(static)
+#elif defined(_SCHEDULE_GUIDED_)
+	#pragma omp parallel for schedule(guided)
+#elif defined(_SCHEDULE_DYNAMIC_)
+	#pragma omp parallel for schedule(dynamic)
+#elif defined(_SCHEDULE_SRR_)
+	memcpy(__tasks, densities, NREGIONS*sizeof(unsigned));
+	__ntasks = NREGIONS;
+	omp_set_workload(__tasks, __ntasks);
+	#pragma omp parallel for schedule(runtime) num_threads(n) default(shared)
+#endif
+	for(int i = 0; i < NREGIONS; i++)
+		mst(data[i], densities[i]);
+}

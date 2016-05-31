@@ -21,130 +21,81 @@
 #include <stdio.h>
 #include <omp.h>
 #include <string.h>
-#include <papi.h>
 #include <stdio.h>
 
-#include "util.h"
-#include "mst.h"
+#include <util.h>
+#include <mst.h>
 
-static int trace = 0;
-
-unsigned __ntasks;
-unsigned *__tasks;
-
-#define NREGIONS 32
-unsigned *readfile(const char *filename, int ntasks)
+/**
+ * @brief Reads input file. 
+ */
+static int *readinput(const char *filename, int *nregions)
 {
-	FILE *infile;
-	unsigned *data;
+	FILE *infile;   /* Input file. */
+	int *densities; /* Densities.  */
 	
+	/* Sanity check. */
+	assert(filename != NULL);
+	assert(ndensities != NULL);
+	
+	/* Open input file. */
 	infile = fopen(filename, "r");
 	assert(infile != NULL);
 	
-	data = smalloc(ntasks*sizeof(unsigned));
+	/* Allocate densities array. */
+	assert(fscanf(infile, "%d", nregions) == 1);
+	densities = smalloc(nregions*sizeof(int));
 	
-	for (int i = 0; i < ntasks; i++)
-		assert (fscanf(infile, "%u", &data[i]) == 1);
+	/* Read densities. */
+	for (int i = 0; i < nregions; i++)
+		assert(fscanf(infile, "%d", &densities[i]) == 1);
 		
 	/* House keeping. */
 	fclose(infile);
-		
-	return (data);
+
+	return (densities);
 }
 
-#if defined(_SCHEDULE_SRR_)
-extern void omp_set_workload(unsigned *, unsigned);
-#endif
+/**
+ * @brief Prints program usage and exits.
+ */
+static void usage(void)
+{
+	printf("Usage: mst input\n");
+	exit(EXIT_SUCCESS);
+}
 
+/**
+ * @brief Generates input points.
+ */
+static struct points *generate_points(int densities, int nregions, int *npoints)
+{
+	
+}
 
+/**
+ * @brief MST clustering kernel front end.
+ */
 int main(int argc, char **argv)
 {
-	int n;
-	double start, end;
-	struct point *data[NREGIONS];
-#ifdef _PROFILE_
-	int events[4] = { PAPI_L1_DCM, PAPI_L2_DCM, PAPI_L2_DCA, PAPI_L3_DCA };
-	long long hwcounters[4];
-#endif
-	unsigned *densities;
-#ifdef _SCHEDULE_ORACLE_
-	unsigned *taskmap = readfile(argv[3], NREGIONS);
-#endif
-
-	densities = readfile(argv[2], NREGIONS);
-
-	__tasks=smalloc(NREGIONS*sizeof(unsigned));
-
-	((void) argc);
+	int nregions;         /* Number of regions. */
+	int *densities;       /* Densities.         */
+	int npoints;          /* Number of points.  */
+	struct point *points; /* Points to cluster. */
 	
-	n = atoi(argv[1]);
-	
-	for (int k = 0; k < NREGIONS; k++)
-	{
-		data[k] = smalloc(densities[k]*sizeof(struct point));
+	/* Wrong usage. */
+	if (argc < 2)
+		usage();
 		
-		/* Initialize data set. */
-		for (unsigned i = 0; i < densities[k]; i++)
-		{
-			data[k][i].x = rand()%10000;
-			data[k][i].y = rand()%10000;
-		}
-	}
-#ifdef _PROFILE_
-	if (PAPI_start_counters(events, 4) != PAPI_OK)
-		error("failed to setup PAPI");
-#endif
-	
-	start = omp_get_wtime();
-#if defined(_SCHEDULE_STATIC_)
-	#pragma omp parallel for schedule(static) num_threads(n) default(shared)
-#elif defined(_SCHEDULE_DYNAMIC_)
-	#pragma omp parallel for schedule(dynamic) num_threads(n) default(shared)
-#elif defined(_SCHEDULE_SRR_)
-	memcpy(__tasks, densities, NREGIONS*sizeof(unsigned));
-	__ntasks = NREGIONS;
-	omp_set_workload(__tasks, __ntasks);
-	#pragma omp parallel for schedule(runtime) num_threads(n) default(shared)
-#elif defined(_SCHEDULE_ORACLE_)
-	memcpy(__tasks, taskmap, NREGIONS*sizeof(unsigned));
-	__ntasks = NREGIONS;
-	#pragma omp parallel for schedule(runtime) num_threads(n) default(shared)
-#endif
-	for (int i = 0; i < NREGIONS; i++)
-	{
-		if (trace)
-		{
-			#pragma omp critical
-			printf("thread %d timestamp %lf\n", omp_get_thread_num(), omp_get_wtime());
-		}
-		mst(data[i], densities[i]);
-		if (trace)
-		{
-			#pragma omp critical
-			printf("thread %d timestamp %lf\n", omp_get_thread_num(), omp_get_wtime());
-		}
-	}
-	end = omp_get_wtime();
+	/* Generate input data for MST. */
+	densities = readinput(argv[1], &nregions);
+	points = generate_points(densities, nregions, &npoints);
 
-#ifdef _PROFILE_
-	if (PAPI_stop_counters(hwcounters, sizeof(events)) != PAPI_OK)
-		error("failed to read hardware counters");
-#endif	
-	printf("time: %lf\n", end - start);
-#ifdef _PROFILE_
-	printf("L1 Misses: %lld\n", hwcounters[0]);
-	printf("L2 Misses: %lld\n", hwcounters[1]);
-	printf("L2 Accesses: %lld\n", hwcounters[2]);
-	printf("L3 Accesses: %lld\n", hwcounters[3]);
-#endif	
+	mst(points, npoints);
+
 	/* House keeping. */
+	free(points);
 	free(densities);
-	for (int i = 0; i < NREGIONS; i++)
-		free(data[i]);
-	free(__tasks);
-#ifdef _SCHEDULE_ORACLE_
-	free(taskmap);
-#endif
 	
 	return (EXIT_SUCCESS);
 }
