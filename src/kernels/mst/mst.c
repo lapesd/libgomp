@@ -28,6 +28,10 @@
 #include "mst.h"
 #include "pqueue.h"
 
+#if defined(_SCHEDULE_SRR_)
+extern void omp_set_workload(unsigned *, unsigned);
+#endif
+
 /**
  * @brief Number of regions.
  * 
@@ -126,9 +130,9 @@ static int point_cmp(const void *p1, const void *p2)
  */
 void mst_clustering(struct point *points, int npoints)
 {
-	double range;                  /* Region range.                    */
-	double xmin, xmax;             /* Min. and max for x.              */
-	int densities[NR_REGIONS + 1]; /* Number of points in each region. */
+	double range;                       /* Region range.                    */
+	double xmin, xmax;                  /* Min. and max for x.              */
+	unsigned densities[NR_REGIONS + 1]; /* Number of points in each region. */
 	
 	/* Sort points according to x coordinate. */
 	qsort(points, npoints, sizeof(struct point), point_cmp);
@@ -160,9 +164,14 @@ void mst_clustering(struct point *points, int npoints)
 	#pragma omp parallel for schedule(guided)
 #elif defined(_SCHEDULE_DYNAMIC_)
 	#pragma omp parallel for schedule(dynamic)
+#elif defined(_SCHEDULE_SRR_)
+	int _densities[NR_REGIONS];
+	memcpy(_densities, &densities[1], NR_REGIONS*sizeof(int));
+	omp_set_workload((unsigned *)&_densities[1], NR_REGIONS);
+	#pragma omp parallel for schedule(runtime)
 #endif
 	for(int i = 1; i <= NR_REGIONS; i++)
-		mst(&points[densities[i - 1]], densities[i]);
+		mst(&points[densities[i - 1]], (int) densities[i]);
 		
 	profile_end();
 	

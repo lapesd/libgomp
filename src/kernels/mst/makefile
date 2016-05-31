@@ -32,7 +32,11 @@ dynamic:
 
 # Builds guided version.
 guided:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_GUIDED_ -o $(BINDIR)/$(EXEC).srr $(LIBS)
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_GUIDED_ -o $(BINDIR)/$(EXEC).guided $(LIBS)
+
+# Builds srr.
+srr:
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_SRR_ -o $(BINDIR)/$(EXEC).srr $(LIBS)
 
 # Cleans compilation files.
 clean:
