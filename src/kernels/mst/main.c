@@ -47,13 +47,13 @@ static struct point *readinput(const char *filename, int *npoints)
 	
 	/* Allocate densities array. */
 	assert(fscanf(infile, "%d", &_npoints) == 1);
-	points = smalloc(_npoints*sizeof(int));
+	points = smalloc(_npoints*sizeof(struct point));
 	*npoints = _npoints;
 	
 	/* Read points. */
 	for (int i = 0; i < _npoints; i++)
 		assert(fscanf(infile, "%lf %lf", &points[i].x, &points[i].y) == 2);
-		
+
 	/* House keeping. */
 	fclose(infile);
 

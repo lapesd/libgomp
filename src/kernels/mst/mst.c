@@ -21,6 +21,8 @@
 #include <string.h>
 #include <math.h>
 #include <omp.h>
+#include <float.h>
+#include <stdio.h>
 
 #include "util.h"
 #include "mst.h"
@@ -31,11 +33,11 @@
  * 
  * @details Numberof regions. Adjust this to improve cache locality.
  */
-#define NR_REGIONS 32
+#define NR_REGIONS 8
 
-inline static int distance(struct point p0, struct point p1)
+inline static double distance(struct point p0, struct point p1)
 {
-	return ((p0.x - p1.x)*(p0.x - p1.x) + (p0.y - p1.y)*(p0.y - p1.y));
+	return (pow((p0.x - p1.x), 2) + pow((p0.y - p1.y), 2));
 }
 
 /**
@@ -44,14 +46,14 @@ inline static int distance(struct point p0, struct point p1)
  * @param data Data points.
  * @param n    Number of points.
  */
-static void mst(struct point *data, int n)
+void mst(const struct point *data, int n)
 {
 	int *from;
-	int *cost;
+	double *cost;
 	struct pqueue *frontier;
 	
 	from = smalloc(n*sizeof(int));
-	cost = smalloc(n*sizeof(int));
+	cost = smalloc(n*sizeof(double));
 		
 	frontier = pqueue_create(n);
 	
@@ -59,7 +61,7 @@ static void mst(struct point *data, int n)
 	for (int i = 0; i < n; i++)
 	{
 		from[i] = -1;
-		cost[i] = INT_MAX;
+		cost[i] = DBL_MAX;
 	}
 	
 	/* Start from point 0. */
@@ -113,7 +115,7 @@ static void mst(struct point *data, int n)
  */
 static int point_cmp(const void *p1, const void *p2)
 {
-	return ((((struct point *)p1)->x > ((struct point *)p2)->y) ? 1 : -1);
+	return ((((struct point *)p1)->x > ((struct point *)p2)->x) ? 1 : -1);
 }
 
 /**
@@ -136,11 +138,20 @@ void mst_clustering(struct point *points, int npoints)
 	xmax = points[npoints - 1].x;
 	
 	/* Compute densities. */
-	range = (xmax - xmin)/NR_REGIONS;
-	memset(densities, 0, NR_REGIONS*sizeof(int));
+	range = fabs((xmax - xmin)/NR_REGIONS);
+	for(int i = 0; i <= NR_REGIONS; i++)
+		densities[i] = 0;
 	for (int i = 0; i < npoints; i++)
-		densities[((int)ceil(points[i].x/range)) + 1]++;
-	
+	{
+		int j = (int)floor((points[i].x + xmin)/range) + 1;
+		
+		/* Fix rounding error. */
+		if (j > NR_REGIONS)
+			j = NR_REGIONS;
+		
+		densities[j]++;
+	}
+
 #if defined(_SCHEDULE_STATIC_)
 	#pragma omp parallel for schedule(static)
 #elif defined(_SCHEDULE_GUIDED_)
@@ -149,5 +160,5 @@ void mst_clustering(struct point *points, int npoints)
 	#pragma omp parallel for schedule(dynamic)
 #endif
 	for(int i = 1; i <= NR_REGIONS; i++)
-		mst(&points[densities[i - 1]], densities[i]);
+		mst(&points[densities[i -1 ]], densities[i]);
 }

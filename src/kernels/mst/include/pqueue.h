@@ -25,8 +25,8 @@
 	extern void pqueue_destroy(struct pqueue *);
 	extern int pqueue_empty(struct pqueue *);
 	extern int pqueue_full(struct pqueue *);
-	extern int pqueue_change(struct pqueue *, int, int);
-	extern void pqueue_insert(struct pqueue *, int, int);
+	extern int pqueue_change(struct pqueue *, int, double);
+	extern void pqueue_insert(struct pqueue *, int, double);
 	extern int pqueue_remove(struct pqueue *);
  
  #endif /* _PQUEUE_H_ */

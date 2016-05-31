@@ -35,7 +35,7 @@ export CC = gcc
 
 # Toolchain configuration.
 export CFLAGS  = -I $(CONTRIBDIR)/include
-export CFLAGS += -std=c99
+export CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200809L
 export CFLAGS += -pedantic -Wall -Wextra -Werror -fopenmp
 export CFLAGS += -O3
 
