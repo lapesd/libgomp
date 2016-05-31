@@ -19,41 +19,45 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <omp.h>
-#include <string.h>
-#include <stdio.h>
 
 #include <util.h>
 #include <mst.h>
 
 /**
  * @brief Reads input file. 
+ * 
+ * @param filename Input filename.
+ * @param npoints  Number of points (output parameter).
+ * 
+ * @returns The data points.
  */
-static int *readinput(const char *filename, int *nregions)
+static struct point *readinput(const char *filename, int *npoints)
 {
-	FILE *infile;   /* Input file. */
-	int *densities; /* Densities.  */
+	int _npoints;         /* Local npoints. */
+	FILE *infile;         /* Input file.    */
+	struct point *points; /* Data points.   */
 	
 	/* Sanity check. */
 	assert(filename != NULL);
-	assert(ndensities != NULL);
+	assert(npoints != NULL);
 	
 	/* Open input file. */
 	infile = fopen(filename, "r");
 	assert(infile != NULL);
 	
 	/* Allocate densities array. */
-	assert(fscanf(infile, "%d", nregions) == 1);
-	densities = smalloc(nregions*sizeof(int));
+	assert(fscanf(infile, "%d", &_npoints) == 1);
+	points = smalloc(_npoints*sizeof(int));
+	*npoints = _npoints;
 	
-	/* Read densities. */
-	for (int i = 0; i < nregions; i++)
-		assert(fscanf(infile, "%d", &densities[i]) == 1);
+	/* Read points. */
+	for (int i = 0; i < _npoints; i++)
+		assert(fscanf(infile, "%lf %lf", &points[i].x, &points[i].y) == 2);
 		
 	/* House keeping. */
 	fclose(infile);
 
-	return (densities);
+	return (points);
 }
 
 /**
@@ -66,20 +70,10 @@ static void usage(void)
 }
 
 /**
- * @brief Generates input points.
- */
-static struct points *generate_points(int densities, int nregions, int *npoints)
-{
-	
-}
-
-/**
  * @brief MST clustering kernel front end.
  */
 int main(int argc, char **argv)
 {
-	int nregions;         /* Number of regions. */
-	int *densities;       /* Densities.         */
 	int npoints;          /* Number of points.  */
 	struct point *points; /* Points to cluster. */
 	
@@ -88,14 +82,12 @@ int main(int argc, char **argv)
 		usage();
 		
 	/* Generate input data for MST. */
-	densities = readinput(argv[1], &nregions);
-	points = generate_points(densities, nregions, &npoints);
+	points = readinput(argv[1], &npoints);
 
-	mst(points, npoints);
+	mst_clustering(points, npoints);
 
 	/* House keeping. */
 	free(points);
-	free(densities);
 	
 	return (EXIT_SUCCESS);
 }

@@ -20,16 +20,16 @@
 #ifndef _MST_H_
 #define _MST_H_
 
-	/* 
-	 * Point.
+	/**
+	 * @brief 2D Point.
 	 */
 	struct point
 	{
-		int x, y;
+		double x; /**< X coordiante. */
+		double y; /**< Y coordinate. */
 	};
 	
-	
-	
-	extern void mst(struct point *, int);
+	/* Forward definitions. */
+	extern void mst_clustering(struct point *, int);
 
 #endif /* _MST_H_ */

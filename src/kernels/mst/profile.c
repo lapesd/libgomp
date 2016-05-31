@@ -17,9 +17,11 @@
  * MA 02110-1301, USA.
  */
 
+#include <stdio.h>
+
 #include <papi.h>
 
-#include <error.h>
+#include <util.h>
 
 /**
  * @brief Number of events to profile.

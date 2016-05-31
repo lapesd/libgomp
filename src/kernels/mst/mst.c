@@ -18,18 +18,33 @@
  */
 
 #include <limits.h>
+#include <string.h>
+#include <math.h>
+#include <omp.h>
 
 #include "util.h"
 #include "mst.h"
 #include "pqueue.h"
 
+/**
+ * @brief Number of regions.
+ * 
+ * @details Numberof regions. Adjust this to improve cache locality.
+ */
+#define NREGIONS 32
 
 inline static int distance(struct point p0, struct point p1)
 {
 	return ((p0.x - p1.x)*(p0.x - p1.x) + (p0.y - p1.y)*(p0.y - p1.y));
 }
 
-void mst(struct point *data, int n)
+/**
+ * @brief MST kernel.
+ * 
+ * @param data Data points.
+ * @param n    Number of points.
+ */
+static void mst(struct point *data, int n)
 {
 	int *from;
 	int *cost;
@@ -87,10 +102,44 @@ void mst(struct point *data, int n)
 	pqueue_destroy(frontier);
 }
 
-void mst(struct point *data)
+/**
+ * @brief Compares two points.
+ * 
+ * @param p1 Point 1.
+ * @param p2 Point 2.
+ * 
+ * @returns One if point 1 is greater than point 2, and an integer less than
+ *          zero otherwise.
+ */
+static int point_cmp(const void *p1, const void *p2)
 {
+	return ((((struct point *)p1)->x > ((struct point *)p2)->y) ? 1 : -1);
+}
+
+/**
+ * @brief MST clustering kernel.
+ * 
+ * @param points  Data points to cluster.
+ * @param npoints Number of points.
+ */
+void mst_clustering(struct point *points, int npoints)
+{
+	double range;                /* Region range.                    */
+	double xmin, xmax;           /* Min. and max for x.              */
+	int densities[NREGIONS + 1]; /* Numbe rof points in each region. */
 	
+	/* Sort points according to x coordinate. */
+	qsort(points, npoints, sizeof(struct point), point_cmp);
 	
+	/* Get maximum and minimum. */
+	xmin = points[0].x;
+	xmax = points[npoints - 1].x;
+	
+	/* Compute densities. */
+	range = (xmax - xmin)/NREGIONS;
+	memset(densities, 0, NREGIONS*sizeof(int));
+	for (int i = 0; i < npoints; i++)
+		densities[((int)ceil(points[i].x/range)) + 1]++;
 	
 #if defined(_SCHEDULE_STATIC_)
 	#pragma omp parallel for schedule(static)
@@ -98,12 +147,7 @@ void mst(struct point *data)
 	#pragma omp parallel for schedule(guided)
 #elif defined(_SCHEDULE_DYNAMIC_)
 	#pragma omp parallel for schedule(dynamic)
-#elif defined(_SCHEDULE_SRR_)
-	memcpy(__tasks, densities, NREGIONS*sizeof(unsigned));
-	__ntasks = NREGIONS;
-	omp_set_workload(__tasks, __ntasks);
-	#pragma omp parallel for schedule(runtime) num_threads(n) default(shared)
 #endif
-	for(int i = 0; i < NREGIONS; i++)
-		mst(data[i], densities[i]);
+	for(int i = 1; i <= NREGIONS; i++)
+		mst(&points[densities[i - 1]], densities[i]);
 }
