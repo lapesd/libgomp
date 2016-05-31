@@ -20,6 +20,7 @@
 #
 # $1: Number of threads.
 # $2: Is simultaneous multithreading (SMT) enabled?
+# $3: Workload size.
 #
 
 BINDIR=$PWD/bin
@@ -34,11 +35,11 @@ function map_threads
 {
 	# Build thread map.
 	if [ $2 == "true" ]; then
-		for (( i=0; i<$1; i++ )); do
+		for (( i=0; i < $1; i++ )); do
 			AFFINITY[$i]=$((2*$i))
 		done
 	else
-		for (( i=0; i<$1; i++ )); do
+		for (( i=0; i < $1; i++ )); do
 			AFFINITY[$i]=$i
 		done
 	fi
@@ -50,13 +51,16 @@ function map_threads
 
 map_threads $1 $2
 
-for kernel in is; do
-	for strategy in static dynamic guided srr; do 
-		echo "== Running $strategy"
-		for (( nthreads=0; nthreads<=$1; nthreads++ )); do
-			LD_LIBRARY_PATH=$LIBDIR  \
-			OMP_SCHEDULE="$strategy" \
-			$BINDIR/$kernel.$strategy
+for kernel in mst; do
+	for pdf in beta gamma gaussian uniform; do
+		for strategy in static dynamic guided srr; do
+			echo "== Running $strategy $pdf"
+			for (( nthreads=0; nthreads <= $1; nthreads++ )); do
+				OMP_NUM_THREADS=$1        \
+				LD_LIBRARY_PATH=$LIBDIR   \
+				OMP_SCHEDULE="$strategy"  \
+				$BINDIR/$kernel.$strategy data/mst-$pdf-$3.txt
+			done
 		done
 	done
 done
