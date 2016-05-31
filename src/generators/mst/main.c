@@ -58,10 +58,10 @@
  * @brief Name of supported probability density functions.
  */
 static const char *pdfnames[NR_PDFS] = {
-	"beta"      /* Beta.     */
+	"beta",     /* Beta.     */
 	"gamma",    /* Gammma.   */
 	"gaussian", /* Gaussian. */
-	"uniform",  /* Uniform.  */
+	"uniform"   /* Uniform.  */
 };
 
 /**
@@ -111,13 +111,14 @@ static void readargs(int argc, const char **argv)
 	/* Parse command line arguments. */
 	for (int i = 1; i < argc; i++)
 	{
-		if (!strcmp(argv[i], "--ntasks"))
+		if (!strcmp(argv[i], "--npoints"))
 			args.npoints = atoi(argv[i + 1]);
 		else if (!strcmp(argv[i], "--pdf"))
 			args.pdfname = argv[i + 1];
 		else if (!strcmp(argv[i], "--help"))
 			usage();
 	}
+	
 	
 	/* Check arguments. */
 	if (args.npoints < 0)
@@ -181,7 +182,7 @@ int main(int argc, const char **argv)
 				break;
 		}
 		
-		printf("%lf %lf", x, y);
+		printf("%.10lf %.10lf\n", x, y);
 	}
 	
 	/* House keeping. */		
