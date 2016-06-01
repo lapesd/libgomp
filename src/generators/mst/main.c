@@ -215,6 +215,57 @@ double *beta(int nsamples, int nintervals)
 }
 
 /**
+ * @brief Builds a gamma historgram.
+ * 
+ * @param nsamples   Number of samples.
+ * @param nintervals Number of sampling intervals.
+ * 
+ * @returns A gamma histogram.
+ */
+double *gamma(int nsamples, int nintervals)
+{
+	int k;
+	int residual;
+	int *histogram;
+	double *x;
+	
+	/* TODO: sanity check. */
+
+	histogram = smalloc(nintervals*sizeof(int));
+	x = smalloc(nsamples*sizeof(double));
+
+	k = nsamples;
+	residual = 0;
+	for (int i = 0; i < nintervals; i++)
+	{
+		int freq = k /= 2;
+		
+		residual += freq;
+		histogram[i] = freq;
+	}
+	residual = nsamples - residual;
+	
+	if (residual > 0)
+	{
+		histogram[nintervals - 1] += residual/2;
+		histogram[nintervals - 2] += residual/2;
+	}
+	
+	/* Generate input data. */
+	k = 0;
+	for (int i = 0; i < nintervals; i++)
+	{
+		for (int j = 0; j < histogram[i]; j++)
+			x[k++] = i;
+	}
+	
+	/* House keeping. */
+	free(histogram);
+	
+	return (x);
+}
+
+/**
  * @brief MST kernel input data generator.
  */
 int main(int argc, const char **argv)
@@ -235,14 +286,17 @@ int main(int argc, const char **argv)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
-		/* Gamma distribution. */
-		case RNG_GAMMA:
 		/* Gaussian distribution. */
 		case RNG_GAUSSIAN:
 		/* Uniform distribution. */
 		case RNG_UNIFORM:
 		default:
 			x = beta(args.npoints, args.nintervals);
+			break;
+			
+		/* Gamma distribution. */
+		case RNG_GAMMA:
+			x = gamma(args.npoints, args.nintervals);
 			break;
 	}
 	
