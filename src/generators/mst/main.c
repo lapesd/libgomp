@@ -140,7 +140,6 @@ static void readargs(int argc, const char **argv)
 			usage();
 	}
 	
-	
 	/* Check arguments. */
 	if (args.nintervals < 1)
 		error("invalid number of sampling intervals");
@@ -181,31 +180,36 @@ double *beta(int nsamples, int nintervals)
 	/* TODO: sanity check. */
 
 	histogram = smalloc(nintervals*sizeof(int));
-	x = smalloc(args.npoints*sizeof(double));
+	x = smalloc(nsamples*sizeof(double));
 
 	residual = 0;
 	for (int i = 0; i < nintervals/2; i++)
 	{
-		int work = nsamples/(1 << (i + 2));
+		int freq = nsamples/(1 << (i + 2));
 		
-		residual += work;
-		histogram[i] = work;
-		histogram[nintervals - i - 1] = work;
+		residual += freq;
+		histogram[i] = freq;
+		histogram[nintervals - i - 1] = freq;
 	}
 	residual = nsamples - (residual*2);
-	histogram[nintervals/2 - 1] += residual/2;
-	histogram[nintervals/2 + 0] += residual/2;
+	
+	if (residual > 0)
+	{
+		histogram[nintervals/2 - 1] += residual/2;
+		histogram[nintervals/2 + 0] += residual/2;
+	}
+	
 	
 	/* Generate input data. */
 	k = 0;
-	for (int i = 0; i < args.nintervals; i++)
+	for (int i = 0; i < nintervals; i++)
 	{
 		for (int j = 0; j < histogram[i]; j++)
 			x[k++] = i;
 	}
 	
 	/* House keeping. */
-	free(histogram);	
+	free(histogram);
 	
 	return (x);
 }
@@ -242,7 +246,6 @@ int main(int argc, const char **argv)
 			break;
 	}
 	
-	
 	/* Dump input data. */
 	printf("%d\n", args.npoints);
 	for (int i = 0; i < args.npoints; i++)
@@ -257,7 +260,6 @@ int main(int argc, const char **argv)
 	/* House keeping. */
 	free(x);
 	gsl_rng_free(r);
-	
 	
 	return (EXIT_SUCCESS);
 }
