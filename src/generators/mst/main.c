@@ -69,10 +69,11 @@ static const char *pdfnames[NR_PDFS] = {
  */
 struct
 {
+	int nintervals;      /**< Number of sampling intervals.         */
 	int npoints;         /**< Number of points.                     */
 	const char *pdfname; /**< Name of probability density function. */
 	int pdfid;           /**< ID of probability density function.   */
-} args = {0, NULL, 0};
+} args = {0, 0, NULL, 0};
  
 /**
  * @brief Prints program usage and exits.
@@ -82,9 +83,10 @@ static void usage(void)
 	printf("Usage: mst_gen [options]\n");
 	printf("Brief: MST clustering kernel input data generator\n");
 	printf("Options:\n");
-	printf("  --help             Prints this information and exits\n");
-	printf("  --npoints <number> Number of data points\n");
-	printf("  --pdf <name>       Probability desity function for random numbers\n");
+	printf("  --help                Prints this information and exits\n");
+	printf("  --nintervals <number> Number of sampling intervals\n");
+	printf("  --npoints <number>    Number of data points\n");
+	printf("  --pdf <name>          Probability desity function for random numbers\n");
 	
 	exit(EXIT_SUCCESS);
 }
@@ -101,6 +103,23 @@ static void error(const char *msg)
 }
 
 /**
+ * @brief Safe maloc().
+ * 
+ * @param n Number of bytes to allocate.
+ * 
+ * @returns A pointer to the allocated memory block.
+ */
+void *smalloc(size_t n)
+{
+	void *p;
+	
+	p = malloc(n);
+	assert(p != NULL);
+	
+	return (p);
+}
+
+/**
  * @brief Reads command line arguments.
  * 
  * @param argc Number of arguments.
@@ -111,7 +130,9 @@ static void readargs(int argc, const char **argv)
 	/* Parse command line arguments. */
 	for (int i = 1; i < argc; i++)
 	{
-		if (!strcmp(argv[i], "--npoints"))
+		if (!strcmp(argv[i], "--nintervals"))
+			args.nintervals = atoi(argv[i + 1]);
+		else if (!strcmp(argv[i], "--npoints"))
 			args.npoints = atoi(argv[i + 1]);
 		else if (!strcmp(argv[i], "--pdf"))
 			args.pdfname = argv[i + 1];
@@ -121,7 +142,9 @@ static void readargs(int argc, const char **argv)
 	
 	
 	/* Check arguments. */
-	if (args.npoints < 0)
+	if (args.nintervals < 1)
+		error("invalid number of sampling intervals");
+	if (args.npoints < 1)
 		error("invalid number of tasks");
 	if (args.pdfname == NULL)
 		error("unsupported probability density function");
@@ -141,12 +164,60 @@ out:
 }
 
 /**
+ * @brief Builds a beta historgram.
+ * 
+ * @param nsamples   Number of samples.
+ * @param nintervals Number of sampling intervals.
+ * 
+ * @returns A beta histogram.
+ */
+double *beta(int nsamples, int nintervals)
+{
+	int k;
+	int residual;
+	int *histogram;
+	double *x;
+	
+	/* TODO: sanity check. */
+
+	histogram = smalloc(nintervals*sizeof(int));
+	x = smalloc(args.npoints*sizeof(double));
+
+	residual = 0;
+	for (int i = 0; i < nintervals/2; i++)
+	{
+		int work = nsamples/(1 << (i + 2));
+		
+		residual += work;
+		histogram[i] = work;
+		histogram[nintervals - i - 1] = work;
+	}
+	residual = nsamples - (residual*2);
+	histogram[nintervals/2 - 1] += residual/2;
+	histogram[nintervals/2 + 0] += residual/2;
+	
+	/* Generate input data. */
+	k = 0;
+	for (int i = 0; i < args.nintervals; i++)
+	{
+		for (int j = 0; j < histogram[i]; j++)
+			x[k++] = i;
+	}
+	
+	/* House keeping. */
+	free(histogram);	
+	
+	return (x);
+}
+
+/**
  * @brief MST kernel input data generator.
  */
 int main(int argc, const char **argv)
 {
 	gsl_rng *r;            /* Pseudo-random number generator.      */
 	const gsl_rng_type *T; /* Pseudo-random number generator type. */
+	double *x;             /* X-numbers.                           */
 	
 	readargs(argc, argv);
 	
@@ -156,38 +227,37 @@ int main(int argc, const char **argv)
 	r = gsl_rng_alloc(T);
 	
 	/* Generate input data. */
+	switch (args.pdfid)
+	{
+		/* Beta distribution. */
+		case RNG_BETA:
+		/* Gamma distribution. */
+		case RNG_GAMMA:
+		/* Gaussian distribution. */
+		case RNG_GAUSSIAN:
+		/* Uniform distribution. */
+		case RNG_UNIFORM:
+		default:
+			x = beta(args.npoints, args.nintervals);
+			break;
+	}
+	
+	
+	/* Dump input data. */
 	printf("%d\n", args.npoints);
 	for (int i = 0; i < args.npoints; i++)
 	{
-		double x, y;
+		double y;
 		
 		y = gsl_ran_flat(r, RNG_UNIFORM_MIN, RNG_UNIFORM_MAX);
 		
-		switch (args.pdfid)
-		{
-			/* Beta distribution. */
-			case RNG_BETA:
-				x = gsl_ran_beta(r, RNG_BETA_A, RNG_BETA_B);
-				break;
-			/* Gamma distribution. */
-			case RNG_GAMMA:
-				x = gsl_ran_gamma(r, RNG_GAMMA_A, RNG_GAMMA_B);
-				break;
-			/* Gaussian distribution. */
-			case RNG_GAUSSIAN:
-				x = gsl_ran_gaussian(r, RNG_GAUSSIAN_STDDEV) + RNG_GAUSSIAN_MEAN;
-				break;
-			/* Uniform distribution. */
-			case RNG_UNIFORM:
-				x = gsl_ran_flat(r, RNG_UNIFORM_MIN, RNG_UNIFORM_MAX);
-				break;
-		}
-		
-		printf("%.10lf %.10lf\n", x, y);
+		printf("%.10lf %.10lf\n", x[i], y);
 	}
 	
-	/* House keeping. */		
+	/* House keeping. */
+	free(x);
 	gsl_rng_free(r);
+	
 	
 	return (EXIT_SUCCESS);
 }
