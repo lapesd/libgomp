@@ -20,7 +20,9 @@
 #
 # $1: Number of threads.
 # $2: Is simultaneous multithreading (SMT) enabled?
-# $3: Workload size.
+# $3: Workload.
+# $4: Workload skew.
+# $5: Strong scaling test?
 #
 
 BINDIR=$PWD/bin
@@ -51,16 +53,26 @@ function map_threads
 
 map_threads $1 $2
 
-for kernel in mst; do
-	for pdf in beta gamma gaussian uniform; do
+if [ $5 == "yes" ]; then
+	for kernel in mst; do
 		for strategy in static dynamic guided srr; do
 			echo "== Running $strategy $pdf"
 			for (( nthreads=0; nthreads <= $1; nthreads++ )); do
-				OMP_NUM_THREADS=$1        \
+				OMP_NUM_THREADS=$nthrads  \
 				LD_LIBRARY_PATH=$LIBDIR   \
 				OMP_SCHEDULE="$strategy"  \
-				$BINDIR/$kernel.$strategy data/mst-$pdf-$3.txt
+				$BINDIR/$kernel.$strategy data/mst-$3-$4.txt
 			done
 		done
 	done
-done
+else
+	for kernel in mst; do
+		for strategy in static dynamic guided srr; do
+			echo "== Running $strategy $pdf"
+			OMP_NUM_THREADS=$1        \
+			LD_LIBRARY_PATH=$LIBDIR   \
+			OMP_SCHEDULE="$strategy"  \
+			$BINDIR/$kernel.$strategy data/mst-$3-$4.txt
+		done
+	done
+fi
