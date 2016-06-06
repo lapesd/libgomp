@@ -294,7 +294,61 @@ double *gaussian(int nsamples, int nintervals)
 		
 		residual += freq;
 		histogram[nintervals/2 - i - 1] = freq;
-		histogram[nintervals/2 + i + 0] = freq;
+		histogram[nintervals/2 + i] = freq;
+	}
+	residual = nsamples - (residual*2);
+	
+	if (residual > 0)
+	{
+		histogram[0] += residual/2;
+		histogram[nintervals - 1] += residual/2;
+	}
+	
+	
+	/* Generate input data. */
+	k = 0;
+	for (int i = 0; i < nintervals; i++)
+	{
+		for (int j = 0; j < histogram[i]; j++)
+			x[k++] = i;
+	}
+	
+	/* House keeping. */
+	free(histogram);
+	
+	return (x);
+}
+
+/**
+ * @brief Builds a Uniform histogram.
+ * 
+ * @param nsamples   Number of samples.
+ * @param nintervals Number of sampling intervals.
+ * 
+ * @returns A Uniform histogram.
+ */
+double *uniform(int nsamples, int nintervals)
+{
+	int k;
+	int residual;
+	int *histogram;
+	double *x;
+	
+	/* Sanity check. */
+	assert(nsamples > 0);
+	assert(nintervals > 0);
+
+	histogram = smalloc(nintervals*sizeof(int));
+	x = smalloc(nsamples*sizeof(double));
+
+	residual = 0;
+	for (int i = 0; i < nintervals; i += 2)
+	{
+		int freq = nsamples/nintervals;
+		
+		residual += freq;
+		histogram[i] = freq;
+		histogram[i + 1] = freq;
 	}
 	residual = nsamples - (residual*2);
 	
@@ -340,8 +394,6 @@ int main(int argc, const char **argv)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
-		/* Uniform distribution. */
-		case RNG_UNIFORM:
 			x = beta(args.npoints, args.nintervals);
 			break;
 			
@@ -350,12 +402,17 @@ int main(int argc, const char **argv)
 			x = gamma(args.npoints, args.nintervals);
 			break;
 			
-		/* Fall trough. */
-		default:
-			
 		/* Gaussian distribution. */
 		case RNG_GAUSSIAN:
 			x = gaussian(args.npoints, args.nintervals);
+			break;
+			
+		/* Fall trough. */
+		default:
+			
+		/* Uniform distribution. */
+		case RNG_UNIFORM:
+			x = uniform(args.npoints, args.nintervals);
 			break;
 	}
 	
