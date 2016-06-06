@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 /**
- * @brief Safe maloc().
+ * @brief Safe malloc().
  * 
  * @param n Number of bytes to allocate.
  * 
@@ -33,6 +33,39 @@ void *smalloc(size_t n)
 	void *p;
 	
 	p = malloc(n);
+	assert(p != NULL);
+	
+	return (p);
+}
+
+/**
+ * @brief Safe calloc().
+ * 
+ * @param nmemb Number of members to allocate.
+ * @param       Number of bytes to allocate.
+ * 
+ * @returns A pointer to the allocated memory block.
+ */
+void *scalloc(size_t nmemb, size_t n)
+{
+	void *p;
+	
+	p = calloc(nmemb, n);
+	assert(p != NULL);
+	
+	return (p);
+}
+/**
+ * @brief Safe realloc().
+ * 
+ * @param p Pointer to previously allocated memory region.
+ * @param n Number of bytes to allocate.
+ * 
+ * @returns A pointer to the allocated memory block.
+ */
+void *srealloc(void *p, size_t n)
+{
+	p = realloc(p, n);
 	assert(p != NULL);
 	
 	return (p);

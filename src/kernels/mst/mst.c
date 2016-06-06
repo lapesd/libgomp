@@ -24,9 +24,9 @@
 #include <float.h>
 #include <profile.h>
 
-#include "util.h"
-#include "mst.h"
-#include "pqueue.h"
+#include <util.h>
+#include <mst.h>
+#include <pqueue.h>
 
 #if defined(_SCHEDULE_SRR_)
 extern void omp_set_workload(unsigned *, unsigned);
@@ -35,7 +35,7 @@ extern void omp_set_workload(unsigned *, unsigned);
 /**
  * @brief Number of regions.
  * 
- * @details Numberof regions. Adjust this to improve cache locality.
+ * @details Number of regions. Adjust this to improve cache locality.
  */
 #define NR_REGIONS 8
 
