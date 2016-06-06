@@ -7,3 +7,4 @@ contrib/lib
 contrib/man
 contrib/share
 src/libgomp/libgomp/build
+data/*

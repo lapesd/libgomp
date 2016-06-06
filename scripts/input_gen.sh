@@ -15,18 +15,32 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
-# 
+#
 
-for generator in mst_gen; do
-	for pdf in beta gamma gaussian uniform; do
-		for npoints in 65536 131072 262144 524288 1048576; do
-			for nintervals in 8 16 32 ; do
-				bin/$generator               \
-					--pdf $pdf               \
-					--npoints $npoints       \
-					--nintervals $nintervals \
-				> data/mst-$pdf-$npoints-$nintervals.txt; 
-			done
+mkdir data
+
+# IS kernel
+for pdf in beta gamma gaussian uniform; do
+	for nnumbers in 65536 131072 262144 524288 1048576; do
+		for nintervals in 8 16 32 ; do
+			bin/is_gen                                \
+				--pdf $pdf                            \
+				--nnumbers $nnumbers                  \
+				--nintervals $nintervals              \
+			> data/is-$pdf-$nnumbers-$nintervals.txt; 
+		done
+	done
+done
+
+# MST kernel
+for pdf in beta gamma gaussian uniform; do
+	for npoints in 65536 131072 262144 524288 1048576; do
+		for nintervals in 8 16 32 ; do
+			bin/mst_gen                  \
+				--pdf $pdf               \
+				--npoints $npoints       \
+				--nintervals $nintervals \
+			> data/mst-$pdf-$npoints-$nintervals.txt; 
 		done
 	done
 done
