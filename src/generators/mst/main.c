@@ -43,6 +43,14 @@
 /**@}*/
 
 /**
+ * @brief Parameters for pseudo-random number generators.
+ */
+/**@{*/
+#define RNG_UNIFORM_MIN     0.0
+#define RNG_UNIFORM_MAX     1.0
+/**@}*/
+
+/**
  * @brief Name of supported probability density functions.
  */
 static const char *pdfnames[NR_PDFS] = {
@@ -51,6 +59,19 @@ static const char *pdfnames[NR_PDFS] = {
 	"gaussian", /* Gaussian. */
 	"uniform"   /* Uniform.  */
 };
+/**
+ * @brief Parameters for pseudo-random number generators.
+ */
+/**@{*/
+#define RNG_BETA_A          0.5
+#define RNG_BETA_B          0.5
+#define RNG_GAMMA_A         1.0
+#define RNG_GAMMA_B         2.0
+#define RNG_GAUSSIAN_STDDEV 1.0
+#define RNG_GAUSSIAN_MEAN   0.0
+#define RNG_UNIFORM_MIN     0.0
+#define RNG_UNIFORM_MAX     1.0
+/**@}*/
 
 /**
  * @brief Program arguments.
@@ -74,7 +95,11 @@ static void usage(void)
 	printf("  --help                Prints this information and exits\n");
 	printf("  --nintervals <number> Number of sampling intervals\n");
 	printf("  --npoints <number>    Number of data points\n");
-	printf("  --pdf <name>          Probability desity function for random numbers\n");
+	printf("  --pdf <name>          Probability desity function for random numbers.\n");
+	printf("        beta              a = 0.5 and b = 0.5\n");
+	printf("        gamma             a = 1.0 and b = 2.0 \n");
+	printf("        gaussian          x = 0.0 and std = 1.0\n");
+	printf("        uniform           a = 0.0 and b = 1.0\n");
 	
 	exit(EXIT_SUCCESS);
 }
