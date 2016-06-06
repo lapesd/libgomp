@@ -52,7 +52,7 @@ static int *readinput(const char *filename, int *nnumbers)
 	
 	/* Read points. */
 	for (int i = 0; i < _nnumbers; i++)
-		assert(fscanf(infile, "%d ", &numbers[i]) == 1);
+		assert(fscanf(infile, "%d", &numbers[i]) == 1);
 
 	/* House keeping. */
 	fclose(infile);

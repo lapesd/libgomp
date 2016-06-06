@@ -20,9 +20,10 @@
 #
 # $1: Number of threads.
 # $2: Is simultaneous multithreading (SMT) enabled?
-# $3: Workload.
-# $4: Workload skew.
-# $5: Strong scaling test?
+# $3: kernel
+# $4: Workload.
+# $5: Workload skew.
+# $6: Strong scaling test?
 #
 
 BINDIR=$PWD/bin
@@ -53,26 +54,22 @@ function map_threads
 
 map_threads $1 $2
 
-if [ $5 == "yes" ]; then
-	for kernel in mst; do
-		for strategy in static dynamic guided srr; do
-			echo "== Running $strategy $pdf"
-			for (( nthreads=0; nthreads <= $1; nthreads++ )); do
-				OMP_NUM_THREADS=$nthrads  \
-				LD_LIBRARY_PATH=$LIBDIR   \
-				OMP_SCHEDULE="$strategy"  \
-				$BINDIR/$kernel.$strategy data/mst-$3-$4.txt
-			done
+if [ $6 == "yes" ]; then
+	for strategy in static dynamic guided srr; do
+		echo "== Running $strategy $pdf"
+		for (( nthreads=0; nthreads <= $1; nthreads++ )); do
+			OMP_NUM_THREADS=$nthrads  \
+			LD_LIBRARY_PATH=$LIBDIR   \
+			OMP_SCHEDULE="$strategy"  \
+			$BINDIR/$3.$strategy data/$3-$4-$5.txt
 		done
 	done
 else
-	for kernel in mst; do
-		for strategy in static dynamic guided srr; do
-			echo "== Running $strategy $pdf"
-			OMP_NUM_THREADS=$1        \
-			LD_LIBRARY_PATH=$LIBDIR   \
-			OMP_SCHEDULE="$strategy"  \
-			$BINDIR/$kernel.$strategy data/mst-$3-$4.txt
-		done
+	for strategy in static dynamic guided srr; do
+		echo "== Running $strategy $pdf"
+		OMP_NUM_THREADS=$1        \
+		LD_LIBRARY_PATH=$LIBDIR   \
+		OMP_SCHEDULE="$strategy"  \
+		$BINDIR/$3.$strategy data/$3-$4-$5.txt
 	done
 fi

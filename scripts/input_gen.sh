@@ -21,7 +21,7 @@ mkdir data
 
 # IS kernel
 for pdf in beta gamma gaussian uniform; do
-	for nnumbers in 65536 131072 262144 524288 1048576; do
+	for nnumbers in 33554432 67108864 134217728 268435456 536870912; do
 		for nintervals in 8 16 32 ; do
 			bin/is_gen                                \
 				--pdf $pdf                            \
