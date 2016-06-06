@@ -36,7 +36,7 @@ guided:
 
 # Builds srr kernels.
 smart-round-robin:
-	cd is && $(MAKE) smart-round-robin
+	cd is && $(MAKE) srr
 	cd mst && $(MAKE) srr
 
 # Cleans compilation files.
