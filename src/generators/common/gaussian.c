@@ -23,12 +23,12 @@
 #include <common.h>
 
 /**
- * @brief Builds a Gaussian histogram.
+ * @brief Builds a Gaussian sample.
  * 
  * @param nsamples   Number of samples.
  * @param nintervals Number of sampling intervals.
  * 
- * @returns A Gaussian histogram.
+ * @returns A Gaussian sample.
  */
 double *gaussian(int nsamples, int nintervals)
 {

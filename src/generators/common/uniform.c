@@ -23,12 +23,12 @@
 #include <common.h>
 
 /**
- * @brief Builds a Uniform histogram.
+ * @brief Builds a Uniform sample.
  * 
  * @param nsamples   Number of samples.
  * @param nintervals Number of sampling intervals.
  * 
- * @returns A Uniform histogram.
+ * @returns A Uniform sample.
  */
 double *uniform(int nsamples, int nintervals)
 {

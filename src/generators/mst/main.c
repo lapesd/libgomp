@@ -43,20 +43,6 @@
 /**@}*/
 
 /**
- * @brief Parameters for pseudo-random number generators.
- */
-/**@{*/
-#define RNG_BETA_A          0.5
-#define RNG_BETA_B          0.5
-#define RNG_GAMMA_A         1.0
-#define RNG_GAMMA_B         2.0
-#define RNG_GAUSSIAN_STDDEV 1.0
-#define RNG_GAUSSIAN_MEAN   0.0
-#define RNG_UNIFORM_MIN     0.0
-#define RNG_UNIFORM_MAX     1.0
-/**@}*/
-
-/**
  * @brief Name of supported probability density functions.
  */
 static const char *pdfnames[NR_PDFS] = {

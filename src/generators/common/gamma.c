@@ -23,12 +23,12 @@
 #include <common.h>
 
 /**
- * @brief Builds a gamma histogram.
+ * @brief Builds a gamma sample.
  * 
  * @param nsamples   Number of samples.
  * @param nintervals Number of sampling intervals.
  * 
- * @returns A gamma histogram.
+ * @returns A gamma sample.
  */
 double *gamma(int nsamples, int nintervals)
 {

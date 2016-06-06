@@ -23,12 +23,12 @@
 #include <common.h>
 
 /**
- * @brief Builds a beta histogram.
+ * @brief Builds a beta sample.
  * 
  * @param nsamples   Number of samples.
  * @param nintervals Number of sampling intervals.
  * 
- * @returns A beta histogram.
+ * @returns A beta sample.
  */
 double *beta(int nsamples, int nintervals)
 {
