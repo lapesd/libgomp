@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -74,7 +75,7 @@ static const char *pdfnames[NR_PDFS] = {
 struct
 {
 	int nintervals;      /**< Number of sampling intervals.         */
-	int npoints;         /**< Number of points.                     */
+	int nnumbers;         /**< Number of points.                     */
 	const char *pdfname; /**< Name of probability density function. */
 	int pdfid;           /**< ID of probability density function.   */
 } args = {0, 0, NULL, 0};
@@ -84,12 +85,12 @@ struct
  */
 static void usage(void)
 {
-	printf("Usage: mst_gen [options]\n");
-	printf("Brief: MST clustering kernel input data generator\n");
+	printf("Usage: is_gen [options]\n");
+	printf("Brief: IS kernel input data generator\n");
 	printf("Options:\n");
 	printf("  --help                Prints this information and exits\n");
 	printf("  --nintervals <number> Number of sampling intervals\n");
-	printf("  --npoints <number>    Number of data points\n");
+	printf("  --nnumbers <number>   Number of  numbers\n");
 	printf("  --pdf <name>          Probability desity function for random numbers.\n");
 	printf("        beta              a = 0.5 and b = 0.5\n");
 	printf("        gamma             a = 1.0 and b = 2.0 \n");
@@ -112,8 +113,8 @@ static void readargs(int argc, const char **argv)
 	{
 		if (!strcmp(argv[i], "--nintervals"))
 			args.nintervals = atoi(argv[i + 1]);
-		else if (!strcmp(argv[i], "--npoints"))
-			args.npoints = atoi(argv[i + 1]);
+		else if (!strcmp(argv[i], "--nnumbers"))
+			args.nnumbers = atoi(argv[i + 1]);
 		else if (!strcmp(argv[i], "--pdf"))
 			args.pdfname = argv[i + 1];
 		else if (!strcmp(argv[i], "--help"))
@@ -123,7 +124,7 @@ static void readargs(int argc, const char **argv)
 	/* Check arguments. */
 	if (args.nintervals < 1)
 		error("invalid number of sampling intervals");
-	if (args.npoints < 1)
+	if (args.nnumbers < 1)
 		error("invalid number of tasks");
 	if (args.pdfname == NULL)
 		error("unsupported probability density function");
@@ -143,37 +144,30 @@ out:
 }
 
 /**
- * @brief MST clustering kernel input data generator.
+ * @brief IS kernel input data generator.
  */
 int main(int argc, const char **argv)
 {
-	gsl_rng *r;            /* Pseudo-random number generator.      */
-	const gsl_rng_type *T; /* Pseudo-random number generator type. */
-	double *x;             /* X-numbers.                           */
+	double *x;
 	
 	readargs(argc, argv);
-	
-	/* Setup random number generator. */
-	gsl_rng_env_setup();
-	T = gsl_rng_default;
-	r = gsl_rng_alloc(T);
 	
 	/* Generate input data. */
 	switch (args.pdfid)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
-			x = beta(args.npoints, args.nintervals);
+			x = beta(args.nnumbers, args.nintervals);
 			break;
 			
 		/* Gamma distribution. */
 		case RNG_GAMMA:
-			x = gamma(args.npoints, args.nintervals);
+			x = gamma(args.nnumbers, args.nintervals);
 			break;
 			
 		/* Gaussian distribution. */
 		case RNG_GAUSSIAN:
-			x = gaussian(args.npoints, args.nintervals);
+			x = gaussian(args.nnumbers, args.nintervals);
 			break;
 			
 		/* Fall trough. */
@@ -181,24 +175,17 @@ int main(int argc, const char **argv)
 			
 		/* Uniform distribution. */
 		case RNG_UNIFORM:
-			x = uniform(args.npoints, args.nintervals);
+			x = uniform(args.nnumbers, args.nintervals);
 			break;
 	}
 	
 	/* Dump input data. */
-	printf("%d\n", args.npoints);
-	for (int i = 0; i < args.npoints; i++)
-	{
-		double y;
-		
-		y = gsl_ran_flat(r, RNG_UNIFORM_MIN, RNG_UNIFORM_MAX);
-		
-		printf("%.10lf %.10lf\n", x[i], y);
-	}
+	printf("%d\n", args.nnumbers);
+	for (int i = 0; i < args.nnumbers; i++)
+		printf("%d\n", (int) ceil(x[i]));
 	
 	/* House keeping. */
 	free(x);
-	gsl_rng_free(r);
 	
 	return (EXIT_SUCCESS);
 }

@@ -26,14 +26,19 @@ SRC = $(wildcard common/*.c)
 # Common Object files.
 OBJ = $(SRC:.c=.o)
 
-# Executable file.
+# Executable files.
+EXEC_IS = is_gen
 EXEC_MST = mst_gen
 
 # Conflicts.
-.PHONY: mst
+.PHONY: is mst
 
 # Builds common object files for data generators.
-all: mst
+all: is mst
+
+# Builds is kernel input data generator.
+is: $(OBJ)
+	$(CC) $(CFLAGS) is/*.c -o $(BINDIR)/$(EXEC_IS) $(OBJ) $(LIBS)
 
 # Builds mst clustering kernel input data generator.
 mst: $(OBJ)
@@ -47,4 +52,5 @@ mst: $(OBJ)
 clean:
 	rm -f $(OBJ)
 	rm -f $(BINDIR)/$(EXEC_MST)
+	rm -f $(BINDIR)/$(EXEC_IS)
 
