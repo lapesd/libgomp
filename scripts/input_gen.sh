@@ -18,7 +18,7 @@
 # 
 
 for generator in mst_gen; do
-	for pdf in beta gamma; do
+	for pdf in beta gamma gaussian uniform; do
 		for npoints in 65536 131072 262144 524288 1048576; do
 			for nintervals in 8 16 32 ; do
 				bin/$generator               \

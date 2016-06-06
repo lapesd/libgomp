@@ -17,16 +17,34 @@
 # MA 02110-1301, USA.
 #
 
+# Tweaks on toolchain.
+CFLAGS += -I include
+
+# Common C source files.
+SRC = $(wildcard common/*.c)
+
+# Common Object files.
+OBJ = $(SRC:.c=.o)
+
+# Executable file.
+EXEC_MST = mst_gen
+
 # Conflicts.
 .PHONY: mst
 
+# Builds common object files for data generators.
 all: mst
 
 # Builds mst clustering kernel input data generator.
-mst:
-	cd mst && $(MAKE) all
+mst: $(OBJ)
+	$(CC) $(CFLAGS) mst/*.c -o $(BINDIR)/$(EXEC_MST) $(OBJ) $(LIBS)
+
+# Builds object file from C source file.
+%.o: %.c
+	$(CC) $< $(CFLAGS) -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd mst && $(MAKE) clean
+	rm -f $(OBJ)
+	rm -f $(BINDIR)/$(EXEC_MST)
 
