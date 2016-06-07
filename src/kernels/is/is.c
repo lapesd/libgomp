@@ -222,22 +222,9 @@ void integer_sort(int *numbers, int nnumbers)
 	indexes[0] = 0;
 	for (int i = 1; i < NR_BUCKETS; i++)
 		indexes[i] = indexes[i - 1] + darray_size(buckets[i]);
-		
-	profile_start();
 	
 	/* Rebuild array. */
-#if defined(_SCHEDULE_STATIC_)
-	#pragma omp parallel for schedule(static)
-#elif defined(_SCHEDULE_GUIDED_)
-	#pragma omp parallel for schedule(guided)
-#elif defined(_SCHEDULE_DYNAMIC_)
 	#pragma omp parallel for schedule(dynamic)
-#elif defined(_SCHEDULE_SRR_)
-	int _buckets_size2[NR_BUCKETS];
-	memcpy(_buckets_size2, &_buckets_size2[1], NR_BUCKETS*sizeof(int));
-	omp_set_workload((unsigned *)&_buckets_size2[1], NR_BUCKETS);
-	#pragma omp parallel for schedule(runtime)
-#endif
 	for (int i = 0; i < NR_BUCKETS; i++)
 	{
 		int k = indexes[i];
@@ -245,9 +232,6 @@ void integer_sort(int *numbers, int nnumbers)
 		for (int j = 0; j < darray_size(buckets[i]); j++)
 			numbers[k + j] = darray_get(buckets[i], j);
 	}
-	
-	profile_end();
-	profile_dump();
 	
 	
 	/* House keeping. */
