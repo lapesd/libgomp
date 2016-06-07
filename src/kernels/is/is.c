@@ -180,7 +180,7 @@ void integer_sort(int *numbers, int nnumbers)
 			min = numbers[i];
 	}
 		
-	range = (max - min + 1)/NR_BUCKETS;
+	range = abs((max - min + 1)/NR_BUCKETS);
 		
 	/* Distribute numbers into buckets. */
 	for (int i = 0; i < nnumbers; i++)

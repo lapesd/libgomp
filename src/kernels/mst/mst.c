@@ -22,9 +22,9 @@
 #include <math.h>
 #include <omp.h>
 #include <float.h>
-#include <profile.h>
 
 #include <util.h>
+#include <profile.h>
 #include <mst.h>
 #include <pqueue.h>
 
