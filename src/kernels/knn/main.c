@@ -21,43 +21,43 @@
 #include <stdio.h>
 
 #include <util.h>
-#include <is.h>
+#include <knn.h>
 
 /**
  * @brief Reads input file. 
  * 
  * @param filename Input filename.
- * @param nnumbers Number of numbers (output parameter).
+ * @param npoints  Number of points (output parameter).
  * 
- * @returns The integer numbers.
+ * @returns The data points.
  */
-static int *readinput(const char *filename, int *nnumbers)
+static struct point *readinput(const char *filename, int *npoints)
 {
-	int _nnumbers; /* Local nnumbers.  */
-	FILE *infile;  /* Input file.      */
-	int *numbers;  /* Integer numbers. */
+	int _npoints;         /* Local npoints. */
+	FILE *infile;         /* Input file.    */
+	struct point *points; /* Data points.   */
 	
 	/* Sanity check. */
 	assert(filename != NULL);
-	assert(nnumbers != NULL);
+	assert(npoints != NULL);
 	
 	/* Open input file. */
 	infile = fopen(filename, "r");
 	assert(infile != NULL);
 	
-	/* Allocate numbers array. */
-	assert(fscanf(infile, "%d", &_nnumbers) == 1);
-	numbers = smalloc(_nnumbers*sizeof(int));
-	*nnumbers = _nnumbers;
+	/* Allocate densities array. */
+	assert(fscanf(infile, "%d", &_npoints) == 1);
+	points = smalloc(_npoints*sizeof(struct point));
+	*npoints = _npoints;
 	
 	/* Read points. */
-	for (int i = 0; i < _nnumbers; i++)
-		assert(fscanf(infile, "%d", &numbers[i]) == 1);
+	for (int i = 0; i < _npoints; i++)
+		assert(fscanf(infile, "%lf %lf", &points[i].x, &points[i].y) == 2);
 
 	/* House keeping. */
 	fclose(infile);
 
-	return (numbers);
+	return (points);
 }
 
 /**
@@ -65,8 +65,8 @@ static int *readinput(const char *filename, int *nnumbers)
  */
 static void usage(void)
 {
-	printf("Usage: is input\n");
-	printf("Brief: IS kernel\n");
+	printf("Usage: knn input\n");
+	printf("Brief: KNN clustering kernel\n");
 	exit(EXIT_SUCCESS);
 }
 
@@ -75,20 +75,18 @@ static void usage(void)
  */
 int main(int argc, char **argv)
 {
-	int nnumbers; /* Number of numbers. */
-	int *numbers; /* Numbers to sort.   */
+	int npoints;          /* Number of points.  */
+	struct point *points; /* Points to analyze. */
 	
 	/* Wrong usage. */
 	if (argc < 2)
 		usage();
 		
-	/* Generate input data for MST. */
-	numbers = readinput(argv[1], &nnumbers);
-	
-	integer_sort(numbers, nnumbers);
+	/* Generate input data for KNN. */
+	points = readinput(argv[1], &npoints);
 
 	/* House keeping. */
-	free(numbers);
+	free(points);
 	
 	return (EXIT_SUCCESS);
 }

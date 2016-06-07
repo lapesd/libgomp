@@ -1,4 +1,5 @@
 *.o
+*.tmp
 *.lo
 bin/
 contrib/bin

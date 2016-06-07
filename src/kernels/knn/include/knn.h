@@ -17,8 +17,8 @@
  * MA 02110-1301, USA.
  */
 
-#ifndef _MST_H_
-#define _MST_H_
+#ifndef _KNN_H_
+#define _KNN_H_
 
 	/**
 	 * @brief 2D Point.
@@ -30,6 +30,6 @@
 	};
 	
 	/* Forward definitions. */
-	extern void mst_clustering(struct point *, int);
+	extern void knearest_neighbors(struct point *, int);
 
-#endif /* _MST_H_ */
+#endif /* _KNN_H_ */

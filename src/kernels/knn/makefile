@@ -1,51 +1,43 @@
 #
-# Copyright(C) 2016 Pedro H. Penna <pedrohenriquepenna@gmail.com
-#
+# Copyright(C) 2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+# 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-#  
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#  
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
-#
 
-all: static guided dynamic smart-round-robin
+# Tweaks on toolchain.
+CFLAGS += -I include
 
-# Builds static kernels.
+# Executable file.
+EXEC = knn
+
+# Builds static version.
 static:
-	cd is && $(MAKE) static
-	cd knn && $(MAKE) static
-	cd mst && $(MAKE) static
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_STATIC_ -o $(BINDIR)/$(EXEC).static $(LIBS)
 
-# Builds dynamic kernels.
+# Builds dynamic version.
 dynamic:
-	cd is && $(MAKE) dynamic
-	cd knn && $(MAKE) dynamic
-	cd mst && $(MAKE) dynamic
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_DYNAMIC_ -o $(BINDIR)/$(EXEC).dynamic $(LIBS)
 
-# Builds guided kernels.
+# Builds guided version.
 guided:
-	cd is && $(MAKE) guided
-	cd knn && $(MAKE) guided
-	cd mst && $(MAKE) guided
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_GUIDED_ -o $(BINDIR)/$(EXEC).guided $(LIBS)
 
-# Builds srr kernels.
-smart-round-robin:
-	cd is && $(MAKE) srr
-	cd knn && $(MAKE) srr
-	cd mst && $(MAKE) srr
+# Builds srr.
+srr:
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_SRR_ -o $(BINDIR)/$(EXEC).srr $(LIBS)
 
 # Cleans compilation files.
 clean:
-	cd is && $(MAKE) clean
-	cd knn && $(MAKE) clean
-	cd mst && $(MAKE) clean
-
+	rm -f $(BINDIR)/$(EXEC).*

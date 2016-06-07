@@ -35,7 +35,7 @@ extern void omp_set_workload(unsigned *, unsigned);
 /**
  * @brief Number of regions.
  * 
- * @details Number of regions. Adjust this to improve cache locality.
+ * @details Number of regions. Adjust this to improve data locality.
  */
 #define NR_REGIONS 8
 
