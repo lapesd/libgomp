@@ -20,17 +20,17 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <common.h>
+#include <util.h>
 
 /**
- * @brief Builds a gamma sample.
+ * @brief Builds a Gaussian sample.
  * 
  * @param nsamples   Number of samples.
  * @param nintervals Number of sampling intervals.
  * 
- * @returns A gamma sample.
+ * @returns A Gaussian sample.
  */
-double *gamma(int nsamples, int nintervals)
+double *gaussian(int nsamples, int nintervals)
 {
 	int k;
 	int residual;
@@ -44,22 +44,23 @@ double *gamma(int nsamples, int nintervals)
 	histogram = smalloc(nintervals*sizeof(int));
 	x = smalloc(nsamples*sizeof(double));
 
-	k = nsamples;
 	residual = 0;
-	for (int i = 0; i < nintervals; i++)
+	for (int i = 0; i < nintervals/2; i++)
 	{
-		int freq = k /= 2;
+		int freq = nsamples/(1 << (i + 2));
 		
 		residual += freq;
-		histogram[i] = freq;
+		histogram[nintervals/2 - i - 1] = freq;
+		histogram[nintervals/2 + i] = freq;
 	}
-	residual = nsamples - residual;
+	residual = nsamples - (residual*2);
 	
 	if (residual > 0)
 	{
+		histogram[0] += residual/2;
 		histogram[nintervals - 1] += residual/2;
-		histogram[nintervals - 2] += residual/2;
 	}
+	
 	
 	/* Generate input data. */
 	k = 0;

@@ -204,7 +204,7 @@ void integer_sort(int *numbers, int nnumbers)
 		}
 		
 		/* Sort Each bucket. */
-		#if defined(_SCHEDULE_STATIC_)
+	#if defined(_SCHEDULE_STATIC_)
 		#pragma omp parallel for schedule(static)
 	#elif defined(_SCHEDULE_GUIDED_)
 		#pragma omp parallel for schedule(guided)

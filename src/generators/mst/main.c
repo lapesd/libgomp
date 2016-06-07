@@ -25,7 +25,7 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
-#include <common.h>
+#include <rng.h>
 
 /**
  * @brief Number of supported probability density functions.

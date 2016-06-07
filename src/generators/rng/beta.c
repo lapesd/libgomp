@@ -20,17 +20,17 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <common.h>
+#include <util.h>
 
 /**
- * @brief Builds a Uniform sample.
+ * @brief Builds a beta sample.
  * 
  * @param nsamples   Number of samples.
  * @param nintervals Number of sampling intervals.
  * 
- * @returns A Uniform sample.
+ * @returns A beta sample.
  */
-double *uniform(int nsamples, int nintervals)
+double *beta(int nsamples, int nintervals)
 {
 	int k;
 	int residual;
@@ -45,20 +45,20 @@ double *uniform(int nsamples, int nintervals)
 	x = smalloc(nsamples*sizeof(double));
 
 	residual = 0;
-	for (int i = 0; i < nintervals; i += 2)
+	for (int i = 0; i < nintervals/2; i++)
 	{
-		int freq = nsamples/nintervals;
+		int freq = nsamples/(1 << (i + 2));
 		
 		residual += freq;
 		histogram[i] = freq;
-		histogram[i + 1] = freq;
+		histogram[nintervals - i - 1] = freq;
 	}
 	residual = nsamples - (residual*2);
 	
 	if (residual > 0)
 	{
-		histogram[0] += residual/2;
-		histogram[nintervals - 1] += residual/2;
+		histogram[nintervals/2 - 1] += residual/2;
+		histogram[nintervals/2 + 0] += residual/2;
 	}
 	
 	

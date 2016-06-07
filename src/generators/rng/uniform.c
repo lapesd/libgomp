@@ -20,17 +20,17 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <common.h>
+#include <util.h>
 
 /**
- * @brief Builds a Gaussian sample.
+ * @brief Builds a Uniform sample.
  * 
  * @param nsamples   Number of samples.
  * @param nintervals Number of sampling intervals.
  * 
- * @returns A Gaussian sample.
+ * @returns A Uniform sample.
  */
-double *gaussian(int nsamples, int nintervals)
+double *uniform(int nsamples, int nintervals)
 {
 	int k;
 	int residual;
@@ -45,13 +45,13 @@ double *gaussian(int nsamples, int nintervals)
 	x = smalloc(nsamples*sizeof(double));
 
 	residual = 0;
-	for (int i = 0; i < nintervals/2; i++)
+	for (int i = 0; i < nintervals; i += 2)
 	{
-		int freq = nsamples/(1 << (i + 2));
+		int freq = nsamples/nintervals;
 		
 		residual += freq;
-		histogram[nintervals/2 - i - 1] = freq;
-		histogram[nintervals/2 + i] = freq;
+		histogram[i] = freq;
+		histogram[i + 1] = freq;
 	}
 	residual = nsamples - (residual*2);
 	

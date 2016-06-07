@@ -16,16 +16,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
  */
- 
-#ifndef _UTIL_H_
-#define _UTIL_H_
 
-	#include <stdlib.h>
+#ifndef _COMMON_H_
+#define _COMMON_H_
+	
+	#include <stddef.h>
 	
 	/* Forward definitions. */
-	extern void *scalloc(size_t, size_t);
-	extern void *smalloc(size_t);
-	extern void *srealloc(void *, size_t);
-	extern void error(const char *);
+	extern double *beta(int, int);
+	extern double *gamma(int, int);
+	extern double *gaussian(int, int);
+	extern double *uniform(int, int);
 
-#endif /* _UTIL_H_ */
+#endif /* _COMMON_H_ */

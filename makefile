@@ -20,6 +20,7 @@
 # Directories.
 export BINDIR     = $(CURDIR)/bin
 export CONTRIBDIR = $(CURDIR)/contrib
+export INCDIR     = $(CURDIR)/include
 export LIBDIR     = $(CURDIR)/lib
 export SRCDIR     = $(CURDIR)/src
 
@@ -35,6 +36,7 @@ export CC = gcc
 
 # Toolchain configuration.
 export CFLAGS  = -I $(CONTRIBDIR)/include
+export CFLAGS += -I $(INCDIR)
 export CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200809L
 export CFLAGS += -pedantic -Wall -Wextra -Werror -fopenmp
 export CFLAGS += -O3

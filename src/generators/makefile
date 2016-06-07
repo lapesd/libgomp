@@ -21,7 +21,7 @@
 CFLAGS += -I include
 
 # Common C source files.
-SRC = $(wildcard common/*.c)
+SRC = $(wildcard rng/*.c)
 
 # Common Object files.
 OBJ = $(SRC:.c=.o)

@@ -17,6 +17,15 @@
 # MA 02110-1301, USA.
 #
 
+# Common C source files.
+SRC = $(wildcard $(pwd)/common/*.c)
+
+# Common Object files.
+OBJ = $(SRC:.c=.o)
+
+# Tweaks on toolchain.
+LIBS += $(OBJ)
+
 # Phony list.
 .PHONY: generators
 .PHONY: kernels
@@ -26,12 +35,16 @@
 all: generators kernels
 
 # Builds kernels.
-kernels:
+kernels: $(OBJ)
 	cd kernels && $(MAKE) all
 
 # Builds input data generators.
-generators:
+generators: $(OBJ)
 	cd generators && $(MAKE) all
+	
+# Builds common objects.
+%.o: %.c
+	$(CC) $< $(CFLAGS) -c -o $@
 
 # Builds libgomp.
 libgomp:
@@ -46,5 +59,6 @@ libgomp-clean:
 	
 # Cleans everything.
 clean:
+	rm -f $(OBJ)
 	cd generators && $(MAKE) clean
 	cd kernels && $(MAKE) clean
