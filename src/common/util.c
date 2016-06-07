@@ -19,22 +19,10 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <stdio.h>
 
 /**
- * @brief Prints and error message and exits.
- * 
- * @param msg Error message.
- */
-void error(const char *msg)
-{
-	fprintf(stderr, "error: %s\n", msg);
-	exit(EXIT_FAILURE);
-}
-
-/**
- * @brief Safe maloc().
+ * @brief Safe malloc().
  * 
  * @param n Number of bytes to allocate.
  * 
@@ -48,4 +36,48 @@ void *smalloc(size_t n)
 	assert(p != NULL);
 	
 	return (p);
+}
+
+/**
+ * @brief Safe calloc().
+ * 
+ * @param nmemb Number of members to allocate.
+ * @param       Number of bytes to allocate.
+ * 
+ * @returns A pointer to the allocated memory block.
+ */
+void *scalloc(size_t nmemb, size_t n)
+{
+	void *p;
+	
+	p = calloc(nmemb, n);
+	assert(p != NULL);
+	
+	return (p);
+}
+/**
+ * @brief Safe realloc().
+ * 
+ * @param p Pointer to previously allocated memory region.
+ * @param n Number of bytes to allocate.
+ * 
+ * @returns A pointer to the allocated memory block.
+ */
+void *srealloc(void *p, size_t n)
+{
+	p = realloc(p, n);
+	assert(p != NULL);
+	
+	return (p);
+}
+
+/**
+ * @brief Prints and error message and exits.
+ * 
+ * @param msg Error message.
+ */
+void error(const char *msg)
+{
+	fprintf(stderr, "error: %s\n", msg);
+	exit(EXIT_FAILURE);
 }

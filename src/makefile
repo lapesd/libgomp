@@ -18,13 +18,13 @@
 #
 
 # Common C source files.
-SRC = $(wildcard $(pwd)/common/*.c)
+SRC = $(wildcard $(CURDIR)/common/*.c)
 
 # Common Object files.
 OBJ = $(SRC:.c=.o)
 
 # Tweaks on toolchain.
-LIBS += $(OBJ)
+LIBS := $(OBJ) $(LIBS)
 
 # Phony list.
 .PHONY: generators
