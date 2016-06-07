@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <profile.h>
 #include <darray.h>
 #include <util.h>
 
@@ -153,9 +154,8 @@ void is(struct darray *da)
  */
 void integer_sort(int *numbers, int nnumbers)
 {
-	int max, _max;           /* Max number in numbers. */
+	int min, max;            /* Max and min numbers.   */
 	int range;               /* Bucket range.          */
-	int i, j, k;             /* Loop indexes.          */
 	int *indexes;            /* Index for buckets.     */
 	struct darray **buckets; /* Buckets.               */
 
@@ -163,85 +163,95 @@ void integer_sort(int *numbers, int nnumbers)
 
 	/* Create buckets. */
 	buckets = smalloc(NR_BUCKETS*sizeof(struct darray *));
-	for (i = 0; i < NR_BUCKETS; i++)
+	for (int i = 0; i < NR_BUCKETS; i++)
 		buckets[i] = darray_create(nnumbers/NR_BUCKETS);
 	
-	max = INT_MIN;
-	
-	#pragma omp parallel private(i, j, k, _max)
-	{	
-		_max = INT_MIN;
+	/* Find max number in the array. */
+	max = INT_MIN; min = INT_MAX;
+	#pragma omp parallel for reduction(min:min) reduction(max:max)
+	for (int i = 0; i < nnumbers; i++)
+	{
+		/* Found max. */
+		if (numbers[i] > max)
+			max = numbers[i];
+		
+		/* Found min. */
+		else if (numbers[i] < min)
+			min = numbers[i];
+	}
+		
+	range = (max - min + 1)/NR_BUCKETS;
+		
+	/* Distribute numbers into buckets. */
+	for (int i = 0; i < nnumbers; i++)
+	{
+		int j = (numbers[i] - min)/range;
+		if (j >= NR_BUCKETS)
+			j = NR_BUCKETS - 1;
 
-		/* Find max number in the array. */
-		#pragma omp for schedule(static)
-		for (i = 0; i < nnumbers; i++)
-		{
-			/* Found. */
-			if (numbers[i] > _max)
-				_max = numbers[i];
-		}
-
-		#pragma omp critical
-		{
-			if (_max > max) {
-				max = _max;
-			}
-		}
-		
-		#pragma omp master
-		range = max/NR_BUCKETS;
-		#pragma omp barrier
-		
-		/* Distribute numbers into buckets. */
-		#pragma omp master
-		for (i = 0; i < nnumbers; i++)
-		{
-			j = numbers[i]/range;
-			if (j >= NR_BUCKETS)
-				j = NR_BUCKETS - 1;
-
-			darray_append(buckets[j], numbers[i]);
-		}
-		
-		/* Sort Each bucket. */
-	#if defined(_SCHEDULE_STATIC_)
-		#pragma omp parallel for schedule(static)
-	#elif defined(_SCHEDULE_GUIDED_)
-		#pragma omp parallel for schedule(guided)
-	#elif defined(_SCHEDULE_DYNAMIC_)
-		#pragma omp parallel for schedule(dynamic)
-	#elif defined(_SCHEDULE_SRR_)
-		int _buckets_size[NR_BUCKETS];
-		memcpy(_buckets_size, &_buckets_size[1], NR_BUCKETS*sizeof(int));
-		omp_set_workload((unsigned *)&_buckets_size[1], NR_BUCKETS);
-		#pragma omp parallel for schedule(runtime)
-	#endif
-		for (i = 0; i < NR_BUCKETS; i++)
-		{
-			if (darray_size(buckets[i]) > 0)
-				is(buckets[i]);
-		}
-		
-		#pragma omp master
-		{
-			/* Build indexes. */
-			indexes[0] = 0;
-			for (i = 1; i < NR_BUCKETS; i++)
-				indexes[i] = indexes[i - 1] + darray_size(buckets[i]);
-		
-			/* Rebuild array. */
-			for (i = 0; i < NR_BUCKETS; i++)
-			{
-				k = indexes[i];
-					
-				for (j = 0; j < darray_size(buckets[i]); j++)
-					numbers[k + j] = darray_get(buckets[i], j);
-			}
-		}
+		darray_append(buckets[j], numbers[i]);
 	}
 	
+	profile_start();
+		
+	/* Sort Each bucket. */
+#if defined(_SCHEDULE_STATIC_)
+	#pragma omp parallel for schedule(static)
+#elif defined(_SCHEDULE_GUIDED_)
+	#pragma omp parallel for schedule(guided)
+#elif defined(_SCHEDULE_DYNAMIC_)
+	#pragma omp parallel for schedule(dynamic)
+#elif defined(_SCHEDULE_SRR_)
+	int _buckets_size1[NR_BUCKETS];
+	memcpy(_buckets_size1, &_buckets_size1[1], NR_BUCKETS*sizeof(int));
+	omp_set_workload((unsigned *)&_buckets_size1[1], NR_BUCKETS);
+	#pragma omp parallel for schedule(runtime)
+#endif
+	for (int i = 0; i < NR_BUCKETS; i++)
+	{
+		if (darray_size(buckets[i]) == 0)
+			continue;
+		
+		is(buckets[i]);
+	}
+	
+	profile_end();
+	profile_dump();
+		
+	/* Build indexes. */
+	indexes[0] = 0;
+	for (int i = 1; i < NR_BUCKETS; i++)
+		indexes[i] = indexes[i - 1] + darray_size(buckets[i]);
+		
+	profile_start();
+	
+	/* Rebuild array. */
+#if defined(_SCHEDULE_STATIC_)
+	#pragma omp parallel for schedule(static)
+#elif defined(_SCHEDULE_GUIDED_)
+	#pragma omp parallel for schedule(guided)
+#elif defined(_SCHEDULE_DYNAMIC_)
+	#pragma omp parallel for schedule(dynamic)
+#elif defined(_SCHEDULE_SRR_)
+	int _buckets_size2[NR_BUCKETS];
+	memcpy(_buckets_size2, &_buckets_size2[1], NR_BUCKETS*sizeof(int));
+	omp_set_workload((unsigned *)&_buckets_size2[1], NR_BUCKETS);
+	#pragma omp parallel for schedule(runtime)
+#endif
+	for (int i = 0; i < NR_BUCKETS; i++)
+	{
+		int k = indexes[i];
+			
+		for (int j = 0; j < darray_size(buckets[i]); j++)
+			numbers[k + j] = darray_get(buckets[i], j);
+	}
+	
+	profile_end();
+	profile_dump();
+	
+	
 	/* House keeping. */
-	for (i = 0; i < NR_BUCKETS; i++)
+	for (int i = 0; i < NR_BUCKETS; i++)
 		darray_destroy(buckets[i]);
 	free(buckets);
 	free(indexes);

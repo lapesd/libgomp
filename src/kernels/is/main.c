@@ -84,6 +84,8 @@ int main(int argc, char **argv)
 		
 	/* Generate input data for MST. */
 	numbers = readinput(argv[1], &nnumbers);
+	
+	integer_sort(numbers, nnumbers);
 
 	/* House keeping. */
 	free(numbers);
