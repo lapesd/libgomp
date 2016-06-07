@@ -195,11 +195,11 @@ mkdir -p $CSVDIR
 
 map_threads $1 $2
 
-for (( niterations=0; niterations < $3; niterations++ )); do
-	for pdf in "${PDFS[@]}"; do
-		for strategy in "${STRATEGIES[@]}"; do
-			for skewness in "${SKEWNESS[@]}"; do
-				echo "== Running $strategy $pdf $skewness"
+for pdf in "${PDFS[@]}"; do
+	for strategy in "${STRATEGIES[@]}"; do
+		for skewness in "${SKEWNESS[@]}"; do
+			echo "== Running $strategy $pdf $skewness"
+			for (( niterations=0; niterations < $3; niterations++ )); do
 				for (( nthreads=1; nthreads <= $1; nthreads++ )); do
 					export LD_LIBRARY_PATH=$LIBDIR
 					export OMP_SCHEDULE="$strategy"
@@ -207,10 +207,10 @@ for (( niterations=0; niterations < $3; niterations++ )); do
 					run_is  $pdf $skewness $strategy $nthreads
 					run_mst $pdf $skewness $strategy $nthreads
 				done
-				parse_is  $pdf $skewness $strategy $1
-				parse_mst $pdf $skewness $strategy $1
-				rm  -f *.tmp
 			done
+			parse_is  $pdf $skewness $strategy $1
+			parse_mst $pdf $skewness $strategy $1
+			rm  -f *.tmp
 		done
 	done
 done
