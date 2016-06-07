@@ -57,8 +57,8 @@ map_threads $1 $2
 if [ $6 == "yes" ]; then
 	for strategy in static dynamic guided srr; do
 		echo "== Running $strategy $pdf"
-		for (( nthreads=0; nthreads <= $1; nthreads++ )); do
-			OMP_NUM_THREADS=$nthrads  \
+		for (( nthreads=0;  <= $1; nthreads++ )); do
+			OMP_NUM_THREADS=$nthreads \
 			LD_LIBRARY_PATH=$LIBDIR   \
 			OMP_SCHEDULE="$strategy"  \
 			$BINDIR/$3.$strategy data/$3-$4-$5.txt
