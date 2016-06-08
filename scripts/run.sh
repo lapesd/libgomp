@@ -80,23 +80,7 @@ function map_threads
 #   $1 Filename prefix.
 #
 function extract_variables
-{
-	grep "L1 Misses" $1.tmp \
-	| cut -d" " -f 3        \
-	>> $CSVDIR/$1-L1.miss.tmp
-	
-	grep "L2 Misses" $1.tmp \
-	| cut -d" " -f 3        \
-	>> $CSVDIR/$1-L2.miss.tmp
-	
-	grep "L2 Accesses" $1.tmp \
-	| cut -d" " -f 3          \
-	>> $CSVDIR/$1-L2.access.tmp
-	
-	grep "L3 Accesses" $1.tmp \
-	| cut -d" " -f 3          \
-	>> $CSVDIR/$1-L3.access.tmp
-	
+{	
 	grep "Total Cycles" $1.tmp \
 	| cut -d" " -f 3           \
 	>> $CSVDIR/$1-cycles.tmp
