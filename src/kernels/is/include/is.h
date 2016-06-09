@@ -21,6 +21,6 @@
 #define _IS_H_
 	
 	/* Forward definitions. */
-	extern void integer_sort(int *, long);
+	extern void integer_sort(long *, long);
 
 #endif /* _IS_H_ */

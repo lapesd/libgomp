@@ -30,24 +30,24 @@
  * 
  * @returns A beta sample.
  */
-double *beta(int nsamples, int nintervals)
+double *beta(long nsamples, long nintervals)
 {
-	int k;
-	int residual;
-	int *histogram;
+	long k;
+	long residual;
+	long *histogram;
 	double *x;
 	
 	/* Sanity check. */
 	assert(nsamples > 0);
 	assert(nintervals > 0);
 
-	histogram = smalloc(nintervals*sizeof(int));
+	histogram = smalloc(nintervals*sizeof(long));
 	x = smalloc(nsamples*sizeof(double));
 
 	residual = 0;
-	for (int i = 0; i < nintervals/2; i++)
+	for (long i = 0; i < nintervals/2; i++)
 	{
-		int freq = nsamples/(1 << (i + 2));
+		long freq = nsamples/(1 << (i + 2));
 		
 		residual += freq;
 		histogram[i] = freq;
@@ -64,9 +64,9 @@ double *beta(int nsamples, int nintervals)
 	
 	/* Generate input data. */
 	k = 0;
-	for (int i = 0; i < nintervals; i++)
+	for (long i = 0; i < nintervals; i++)
 	{
-		for (int j = 0; j < histogram[i]; j++)
+		for (long j = 0; j < histogram[i]; j++)
 			x[k++] = i;
 	}
 	

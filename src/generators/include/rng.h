@@ -23,9 +23,9 @@
 	#include <stddef.h>
 	
 	/* Forward definitions. */
-	extern double *beta(int, int);
-	extern double *gamma(int, int);
-	extern double *gaussian(int, int);
-	extern double *uniform(int, int);
+	extern double *beta(long, long);
+	extern double *gamma(long, long);
+	extern double *gaussian(long, long);
+	extern double *uniform(long, long);
 
 #endif /* _COMMON_H_ */

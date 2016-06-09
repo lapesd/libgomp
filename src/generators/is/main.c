@@ -75,10 +75,10 @@ static const char *pdfnames[NR_PDFS] = {
  */
 struct
 {
-	int nintervals;      /**< Number of sampling intervals.         */
+	long nintervals;      /**< Number of sampling intervals.         */
 	long nnumbers;       /**< Number of points.                     */
 	const char *pdfname; /**< Name of probability density function. */
-	int pdfid;           /**< ID of probability density function.   */
+	long pdfid;           /**< ID of probability density function.   */
 } args = {0, 0, NULL, 0};
  
 /**
@@ -107,15 +107,15 @@ static void usage(void)
  * @param argc Number of arguments.
  * @param argv Arguments.
  */
-static void readargs(int argc, const char **argv)
+static void readargs(long argc, const char **argv)
 {
 	/* Parse command line arguments. */
-	for (int i = 1; i < argc; i++)
+	for (long i = 1; i < argc; i++)
 	{
 		if (!strcmp(argv[i], "--nintervals"))
 			args.nintervals = atoi(argv[i + 1]);
 		else if (!strcmp(argv[i], "--nnumbers"))
-			args.nnumbers = atoi(argv[i + 1]);
+			args.nnumbers = atol(argv[i + 1]);
 		else if (!strcmp(argv[i], "--pdf"))
 			args.pdfname = argv[i + 1];
 		else if (!strcmp(argv[i], "--help"))
@@ -129,7 +129,7 @@ static void readargs(int argc, const char **argv)
 		error("invalid number of tasks");
 	if (args.pdfname == NULL)
 		error("unsupported probability density function");
-	for (int i = 0; i < NR_PDFS; i++)
+	for (long i = 0; i < NR_PDFS; i++)
 	{
 		if (!strcmp(args.pdfname, pdfnames[i]))
 		{
@@ -183,7 +183,7 @@ int main(int argc, const char **argv)
 	/* Dump input data. */
 	printf("%ld\n", args.nnumbers);
 	for (long i = 0; i < args.nnumbers; i++)
-		printf("%d\n", (int) ceil(x[i]));
+		printf("%ld\n", (long) ceil(x[i]));
 	
 	/* House keeping. */
 	free(x);

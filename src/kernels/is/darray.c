@@ -29,7 +29,7 @@
  * 
  * @returns A dynamic array.
  */
-struct darray *darray_create(int size)
+struct darray *darray_create(long size)
 {
 	struct darray *da;
 	
@@ -41,7 +41,7 @@ struct darray *darray_create(int size)
 	/* Initialize array. */
 	da->size = 0;
 	da->maxsize = size;
-	da->elements = scalloc(size, sizeof(int));
+	da->elements = scalloc(size, sizeof(long));
 	
 	return (da);
 }
@@ -68,7 +68,7 @@ void darray_destroy(struct darray *da)
 static void darray_expand(struct darray *da)
 {	
 	da->maxsize <<= 1;
-	da->elements = srealloc(da->elements, sizeof(int)*da->maxsize);
+	da->elements = srealloc(da->elements, sizeof(long)*da->maxsize);
 }
 
 /**
@@ -77,7 +77,7 @@ static void darray_expand(struct darray *da)
  * @param da    Target dynamic array.
  * @param value Value.
  */
-void darray_append(struct darray *da, int value)
+void darray_append(struct darray *da, long value)
 {
 	/* Sanity check. */
 	assert(da != NULL);
@@ -97,7 +97,7 @@ void darray_append(struct darray *da, int value)
  * 
  * @returns The value stored in @p idx of the dynamic array pointed to by @p da.
  */
-int darray_get(struct darray *da, int idx)
+long darray_get(struct darray *da, long idx)
 {
 	/* Sanity check. */
 	assert(da != NULL);
@@ -115,7 +115,7 @@ int darray_get(struct darray *da, int idx)
  * @param idx   Index in dynamic array.
  * @param value Value to store.
  */
-void darray_set(struct darray *da, int idx, int value)
+void darray_set(struct darray *da, long idx, long value)
 {
 	/* Sanity check. */
 	assert(da != NULL);

@@ -55,11 +55,11 @@ extern void omp_set_workload(unsigned *, unsigned);
 /*
  * Quicksort partition.
  */
-static int partition(int *a, int l, int r)
+static long partition(long *a, long l, long r)
 {
-	int v;    /* Partitioning element. */
-	int t;    /* Temporary element.    */
-	int i, j; /* Loop index.           */
+	long v;    /* Partitioning element. */
+	long t;    /* Temporary element.    */
+	long i, j; /* Loop index.           */
 	
 	i = l - 1;
 	j = r;
@@ -90,10 +90,10 @@ static int partition(int *a, int l, int r)
 /*
  * Quicksort.
  */
-static void quicksort(int *a, int l, int r)
+static void quicksort(long *a, long l, long r)
 {
-	int i; /* Pivot.             */
-	int t; /* Temporary element. */
+	long i; /* Pivot.             */
+	long t; /* Temporary element. */
 	
 	/* Fine grain stop. */
 	if ((r - l) <= M)
@@ -116,11 +116,11 @@ static void quicksort(int *a, int l, int r)
 /*
  * Insertion sort.
  */
-static void insertion(int *a, int l, int r)
+static void insertion(long *a, long l, long r)
 {
-	int t;    /* Temporary value. */
-	int v;    /* Working element. */
-	int i, j; /* Loop indexes.    */
+	long t;    /* Temporary value. */
+	long v;    /* Working element. */
+	long i, j; /* Loop indexes.    */
 	
 	for (i = r; i > l; i--)
 		compexgh(a[i - 1], a[i], t);
@@ -152,18 +152,18 @@ void is(struct darray *da)
 /**
  * @brief integer sort kernel.
  */
-void integer_sort(int *numbers, long nnumbers)
+void integer_sort(long *numbers, long nnumbers)
 {
-	int min, max;            /* Max and min numbers.   */
-	int range;               /* Bucket range.          */
-	int *indexes;            /* Index for buckets.     */
+	long min, max;            /* Max and min numbers.   */
+	long range;               /* Bucket range.          */
+	long *indexes;            /* Index for buckets.     */
 	struct darray **buckets; /* Buckets.               */
 
-	indexes = smalloc(NR_BUCKETS*sizeof(int));
+	indexes = smalloc(NR_BUCKETS*sizeof(long));
 
 	/* Create buckets. */
 	buckets = smalloc(NR_BUCKETS*sizeof(struct darray *));
-	for (int i = 0; i < NR_BUCKETS; i++)
+	for (long i = 0; i < NR_BUCKETS; i++)
 		buckets[i] = darray_create(nnumbers/NR_BUCKETS);
 	
 	/* Find max number in the array. */
@@ -185,7 +185,7 @@ void integer_sort(int *numbers, long nnumbers)
 	/* Distribute numbers into buckets. */
 	for (long i = 0; i < nnumbers; i++)
 	{
-		int j = (numbers[i] - min)/range;
+		long j = (numbers[i] - min)/range;
 		if (j >= NR_BUCKETS)
 			j = NR_BUCKETS - 1;
 
@@ -202,12 +202,12 @@ void integer_sort(int *numbers, long nnumbers)
 #elif defined(_SCHEDULE_DYNAMIC_)
 	#pragma omp parallel for schedule(dynamic)
 #elif defined(_SCHEDULE_SRR_)
-	int _buckets_size1[NR_BUCKETS];
-	memcpy(_buckets_size1, &_buckets_size1[1], NR_BUCKETS*sizeof(int));
+	long _buckets_size1[NR_BUCKETS];
+	memcpy(_buckets_size1, &_buckets_size1[1], NR_BUCKETS*sizeof(long));
 	omp_set_workload((unsigned *)&_buckets_size1[1], NR_BUCKETS);
 	#pragma omp parallel for schedule(runtime)
 #endif
-	for (int i = 0; i < NR_BUCKETS; i++)
+	for (long i = 0; i < NR_BUCKETS; i++)
 	{
 		if (darray_size(buckets[i]) == 0)
 			continue;
@@ -220,22 +220,22 @@ void integer_sort(int *numbers, long nnumbers)
 		
 	/* Build indexes. */
 	indexes[0] = 0;
-	for (int i = 1; i < NR_BUCKETS; i++)
+	for (long i = 1; i < NR_BUCKETS; i++)
 		indexes[i] = indexes[i - 1] + darray_size(buckets[i]);
 	
 	/* Rebuild array. */
 	#pragma omp parallel for schedule(dynamic)
-	for (int i = 0; i < NR_BUCKETS; i++)
+	for (long i = 0; i < NR_BUCKETS; i++)
 	{
-		int k = indexes[i];
+		long k = indexes[i];
 			
-		for (int j = 0; j < darray_size(buckets[i]); j++)
+		for (long j = 0; j < darray_size(buckets[i]); j++)
 			numbers[k + j] = darray_get(buckets[i], j);
 	}
 	
 	
 	/* House keeping. */
-	for (int i = 0; i < NR_BUCKETS; i++)
+	for (long i = 0; i < NR_BUCKETS; i++)
 		darray_destroy(buckets[i]);
 	free(buckets);
 	free(indexes);

@@ -34,7 +34,7 @@ EXEC_MST = mst_gen
 .PHONY: is mst
 
 # Builds common object files for data generators.
-all: is mst
+all: is
 
 # Builds is kernel input data generator.
 is: $(OBJ)

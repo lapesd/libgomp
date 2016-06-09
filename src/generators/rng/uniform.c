@@ -30,24 +30,24 @@
  * 
  * @returns A Uniform sample.
  */
-double *uniform(int nsamples, int nintervals)
+double *uniform(long nsamples, long nintervals)
 {
-	int k;
-	int residual;
-	int *histogram;
+	long k;
+	long residual;
+	long *histogram;
 	double *x;
 	
 	/* Sanity check. */
 	assert(nsamples > 0);
 	assert(nintervals > 0);
 
-	histogram = smalloc(nintervals*sizeof(int));
+	histogram = smalloc(nintervals*sizeof(long));
 	x = smalloc(nsamples*sizeof(double));
 
 	residual = 0;
-	for (int i = 0; i < nintervals; i += 2)
+	for (long i = 0; i < nintervals; i += 2)
 	{
-		int freq = nsamples/nintervals;
+		long freq = nsamples/nintervals;
 		
 		residual += freq;
 		histogram[i] = freq;
@@ -64,9 +64,9 @@ double *uniform(int nsamples, int nintervals)
 	
 	/* Generate input data. */
 	k = 0;
-	for (int i = 0; i < nintervals; i++)
+	for (long i = 0; i < nintervals; i++)
 	{
-		for (int j = 0; j < histogram[i]; j++)
+		for (long j = 0; j < histogram[i]; j++)
 			x[k++] = i;
 	}
 	

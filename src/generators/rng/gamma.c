@@ -30,25 +30,25 @@
  * 
  * @returns A gamma sample.
  */
-double *gamma(int nsamples, int nintervals)
+double *gamma(long nsamples, long nintervals)
 {
-	int k;
-	int residual;
-	int *histogram;
+	long k;
+	long residual;
+	long *histogram;
 	double *x;
 	
 	/* Sanity check. */
 	assert(nsamples > 0);
 	assert(nintervals > 0);
 
-	histogram = smalloc(nintervals*sizeof(int));
+	histogram = smalloc(nintervals*sizeof(long));
 	x = smalloc(nsamples*sizeof(double));
 
 	k = nsamples;
 	residual = 0;
-	for (int i = 0; i < nintervals; i++)
+	for (long i = 0; i < nintervals; i++)
 	{
-		int freq = k /= 2;
+		long freq = k /= 2;
 		
 		residual += freq;
 		histogram[i] = freq;
@@ -63,9 +63,9 @@ double *gamma(int nsamples, int nintervals)
 	
 	/* Generate input data. */
 	k = 0;
-	for (int i = 0; i < nintervals; i++)
+	for (long i = 0; i < nintervals; i++)
 	{
-		for (int j = 0; j < histogram[i]; j++)
+		for (long j = 0; j < histogram[i]; j++)
 			x[k++] = i;
 	}
 	

@@ -27,9 +27,9 @@
 	 */
 	struct darray
 	{
-		int size;      /**< Current size. */
-		int maxsize;   /**< Maximum size. */
-		int *elements; /**< Elements.     */
+		long size;      /**< Current size. */
+		long maxsize;   /**< Maximum size. */
+		long *elements; /**< Elements.     */
 	};
 	
 	/**
@@ -38,18 +38,18 @@
 	typedef struct darray * darray_tt;
 
 	/* Forward definitions. */
-	extern void darray_append(darray_tt, int);
-	extern struct darray *darray_create(int);
+	extern void darray_append(darray_tt, long);
+	extern struct darray *darray_create(long);
 	extern void darray_destroy(darray_tt);
-	extern int darray_get(darray_tt, int);
-	extern void darray_set(darray_tt, int, int);
+	extern long darray_get(darray_tt, long);
+	extern void darray_set(darray_tt, long, long);
 	
 	/**
 	 * @brief Returns the size of a dynamic array.
 	 * 
 	 * @param da Target array.
 	 */
-	inline int darray_size(darray_tt da)
+	inline long darray_size(darray_tt da)
 	{
 		assert(da != NULL);
 		
