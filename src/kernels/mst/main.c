@@ -31,9 +31,9 @@
  * 
  * @returns The data points.
  */
-static struct point *readinput(const char *filename, int *npoints)
+static struct point *readinput(const char *filename, long *npoints)
 {
-	int _npoints;         /* Local npoints. */
+	long _npoints;         /* Local npoints. */
 	FILE *infile;         /* Input file.    */
 	struct point *points; /* Data points.   */
 	
@@ -51,7 +51,7 @@ static struct point *readinput(const char *filename, int *npoints)
 	*npoints = _npoints;
 	
 	/* Read points. */
-	for (int i = 0; i < _npoints; i++)
+	for (long i = 0; i < _npoints; i++)
 		assert(fscanf(infile, "%lf %lf", &points[i].x, &points[i].y) == 2);
 
 	/* House keeping. */
@@ -75,7 +75,7 @@ static void usage(void)
  */
 int main(int argc, char **argv)
 {
-	int npoints;          /* Number of points.  */
+	long npoints;          /* Number of points.  */
 	struct point *points; /* Points to cluster. */
 	
 	/* Wrong usage. */
