@@ -76,7 +76,7 @@ static const char *pdfnames[NR_PDFS] = {
 struct
 {
 	int nintervals;      /**< Number of sampling intervals.         */
-	int nnumbers;         /**< Number of points.                     */
+	long nnumbers;       /**< Number of points.                     */
 	const char *pdfname; /**< Name of probability density function. */
 	int pdfid;           /**< ID of probability density function.   */
 } args = {0, 0, NULL, 0};
@@ -181,8 +181,8 @@ int main(int argc, const char **argv)
 	}
 	
 	/* Dump input data. */
-	printf("%d\n", args.nnumbers);
-	for (int i = 0; i < args.nnumbers; i++)
+	printf("%ld\n", args.nnumbers);
+	for (long i = 0; i < args.nnumbers; i++)
 		printf("%d\n", (int) ceil(x[i]));
 	
 	/* House keeping. */

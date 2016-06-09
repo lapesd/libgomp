@@ -31,11 +31,11 @@
  * 
  * @returns The integer numbers.
  */
-static int *readinput(const char *filename, int *nnumbers)
+static int *readinput(const char *filename, long *nnumbers)
 {
-	int _nnumbers; /* Local nnumbers.  */
-	FILE *infile;  /* Input file.      */
-	int *numbers;  /* Integer numbers. */
+	long _nnumbers; /* Local nnumbers.  */
+	FILE *infile;   /* Input file.      */
+	int *numbers;   /* Integer numbers. */
 	
 	/* Sanity check. */
 	assert(filename != NULL);
@@ -46,7 +46,7 @@ static int *readinput(const char *filename, int *nnumbers)
 	assert(infile != NULL);
 	
 	/* Allocate numbers array. */
-	assert(fscanf(infile, "%d", &_nnumbers) == 1);
+	assert(fscanf(infile, "%ld", &_nnumbers) == 1);
 	numbers = smalloc(_nnumbers*sizeof(int));
 	*nnumbers = _nnumbers;
 	
@@ -75,8 +75,8 @@ static void usage(void)
  */
 int main(int argc, char **argv)
 {
-	int nnumbers; /* Number of numbers. */
-	int *numbers; /* Numbers to sort.   */
+	long nnumbers; /* Number of numbers. */
+	int *numbers;  /* Numbers to sort.   */
 	
 	/* Wrong usage. */
 	if (argc < 2)

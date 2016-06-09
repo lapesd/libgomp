@@ -35,7 +35,7 @@ extern void omp_set_workload(unsigned *, unsigned);
  * 
  * @details Number of buckets. Adjust this to improve cache locality.
  */
-#define NR_BUCKETS 8
+#define NR_BUCKETS 32
 
 /*
  * Exchange two numbers.
@@ -152,7 +152,7 @@ void is(struct darray *da)
 /**
  * @brief integer sort kernel.
  */
-void integer_sort(int *numbers, int nnumbers)
+void integer_sort(int *numbers, long nnumbers)
 {
 	int min, max;            /* Max and min numbers.   */
 	int range;               /* Bucket range.          */
@@ -169,7 +169,7 @@ void integer_sort(int *numbers, int nnumbers)
 	/* Find max number in the array. */
 	max = INT_MIN; min = INT_MAX;
 	#pragma omp parallel for reduction(min:min) reduction(max:max)
-	for (int i = 0; i < nnumbers; i++)
+	for (long i = 0; i < nnumbers; i++)
 	{
 		/* Found max. */
 		if (numbers[i] > max)
@@ -183,7 +183,7 @@ void integer_sort(int *numbers, int nnumbers)
 	range = abs((max - min + 1)/NR_BUCKETS);
 		
 	/* Distribute numbers into buckets. */
-	for (int i = 0; i < nnumbers; i++)
+	for (long i = 0; i < nnumbers; i++)
 	{
 		int j = (numbers[i] - min)/range;
 		if (j >= NR_BUCKETS)
