@@ -43,7 +43,7 @@ double *gaussian(int nclasses, double skewness)
 	histogram = smalloc(nclasses*sizeof(double));
 
 	/* Build histogram. */
-	freq = 1.0;
+	freq = 0.5;
 	for (int i = 0; i < nclasses/2; i++)
 	{
 		freq *= skewness;
