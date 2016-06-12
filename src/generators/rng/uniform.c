@@ -43,7 +43,7 @@ double *uniform(int nclasses, double skewness)
 	assert(skewness > 0.0);
 	assert(skewness < 1.0);
 
-	histogram = smalloc(nclasses*sizeof(int));
+	histogram = smalloc(nclasses*sizeof(double));
 
 	/* Build histogram. */
 	freq = 1.0/nclasses;
