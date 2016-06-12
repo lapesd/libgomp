@@ -23,7 +23,7 @@
 	#include <stddef.h>
 	
 	/* Forward definitions. */
-	extern double *beta(long, long);
+	extern double *beta(int, double);
 	extern double *gamma(long, long);
 	extern double *gaussian(long, long);
 	extern double *uniform(long, long);
