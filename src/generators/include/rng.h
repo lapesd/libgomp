@@ -26,6 +26,6 @@
 	extern double *beta(int, double);
 	extern double *gamma(int, double);
 	extern double *gaussian(int, double);
-	extern double *uniform(long, long);
+	extern double *uniform(int, double);
 
 #endif /* _COMMON_H_ */

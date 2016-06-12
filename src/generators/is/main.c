@@ -48,8 +48,7 @@
  * @brief Parameters for pseudo-random number generators.
  */
 /**@{*/
-#define RNG_UNIFORM_MIN     0.0
-#define RNG_UNIFORM_MAX     1.0
+#define SKEWNESS 0.25
 /**@}*/
 
 /**
@@ -63,22 +62,14 @@ static const char *pdfnames[NR_PDFS] = {
 };
 
 /**
- * @brief Parameters for pseudo-random number generators.
- */
-/**@{*/
-#define RNG_UNIFORM_MIN     0.0
-#define RNG_UNIFORM_MAX     1.0
-/**@}*/
-
-/**
  * @brief Program arguments.
  */
 struct
 {
-	long nintervals;      /**< Number of sampling intervals.         */
+	int nintervals;      /**< Number of sampling intervals.         */
 	long nnumbers;       /**< Number of points.                     */
 	const char *pdfname; /**< Name of probability density function. */
-	long pdfid;           /**< ID of probability density function.   */
+	int pdfid;           /**< ID of probability density function.   */
 } args = {0, 0, NULL, 0};
  
 /**
@@ -107,10 +98,10 @@ static void usage(void)
  * @param argc Number of arguments.
  * @param argv Arguments.
  */
-static void readargs(long argc, const char **argv)
+static void readargs(int argc, const char **argv)
 {
 	/* Parse command line arguments. */
-	for (long i = 1; i < argc; i++)
+	for (int i = 1; i < argc; i++)
 	{
 		if (!strcmp(argv[i], "--nintervals"))
 			args.nintervals = atoi(argv[i + 1]);
@@ -129,7 +120,7 @@ static void readargs(long argc, const char **argv)
 		error("invalid number of tasks");
 	if (args.pdfname == NULL)
 		error("unsupported probability density function");
-	for (long i = 0; i < NR_PDFS; i++)
+	for (int i = 0; i < NR_PDFS; i++)
 	{
 		if (!strcmp(args.pdfname, pdfnames[i]))
 		{
@@ -149,7 +140,8 @@ out:
  */
 int main(int argc, const char **argv)
 {
-	double *x;
+	long n;
+	double *h;
 	
 	readargs(argc, argv);
 	
@@ -158,17 +150,17 @@ int main(int argc, const char **argv)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
-			x = beta(args.nnumbers, args.nintervals);
+			h = beta(args.nintervals, SKEWNESS);
 			break;
 			
 		/* Gamma distribution. */
 		case RNG_GAMMA:
-			x = gamma(args.nnumbers, args.nintervals);
+			h = gamma(args.nintervals, SKEWNESS);
 			break;
 			
 		/* Gaussian distribution. */
 		case RNG_GAUSSIAN:
-			x = gaussian(args.nnumbers, args.nintervals);
+			h = gaussian(args.nintervals, SKEWNESS);
 			break;
 			
 		/* Fall trough. */
@@ -176,17 +168,27 @@ int main(int argc, const char **argv)
 			
 		/* Uniform distribution. */
 		case RNG_UNIFORM:
-			x = uniform(args.nnumbers, args.nintervals);
+			h = uniform(args.nintervals, SKEWNESS);
 			break;
 	}
 	
+	/* Adjust number of numbers. */
+	n = 0;
+	for (int i = 0; i < args.nintervals; i++)
+		n += ceil(args.nnumbers*h[i]);
+	
 	/* Dump input data. */
-	printf("%ld\n", args.nnumbers);
-	for (long i = 0; i < args.nnumbers; i++)
-		printf("%ld\n", (long) ceil(x[i]));
+	printf("%ld\n", n);
+	for (int i = 0; i < args.nintervals; i++)
+	{
+		int nnumbers = ceil(args.nnumbers*h[i]);
+		
+		for (int j = 0; j < nnumbers; j++)
+			printf("%d\n", i);
+	}
 	
 	/* House keeping. */
-	free(x);
+	free(h);
 	
 	return (EXIT_SUCCESS);
 }

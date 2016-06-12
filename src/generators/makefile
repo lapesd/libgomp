@@ -31,7 +31,7 @@ EXEC_IS = is_gen
 EXEC_MST = mst_gen
 
 # Conflicts.
-.PHONY: is mst
+.PHONY: is
 
 # Builds common object files for data generators.
 all: is

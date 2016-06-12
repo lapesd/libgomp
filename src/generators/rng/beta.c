@@ -23,12 +23,12 @@
 #include <util.h>
 
 /**
- * @brief Builds a beta sample.
+ * @brief Builds a Beta histogram.
  * 
- * @param nsamples Number of classes.
+ * @param nclasses Number of classes.
  * @param skewness Sampling skewness.
  * 
- * @returns A beta histogram.
+ * @returns A Beta histogram.
  */
 double *beta(int nclasses, double skewness)
 {
@@ -38,13 +38,13 @@ double *beta(int nclasses, double skewness)
 	/* Sanity check. */
 	assert(nclasses > 0);
 	assert(skewness > 0.0);
-	assert(skewness < 1.0)
+	assert(skewness < 1.0);
 
 	histogram = smalloc(nclasses*sizeof(double));
 
 	/* Build histogram. */
 	freq = 1.0;
-	for (long i = 0; i < nclasses/2; i++)
+	for (int i = 0; i < nclasses/2; i++)
 	{
 		freq *= skewness;
 		

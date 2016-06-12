@@ -23,14 +23,14 @@
 #include <util.h>
 
 /**
- * @brief Builds a gamma sample.
+ * @brief Builds a Gamma histogram.
  * 
- * @param nsamples Number of classes.
+ * @param nclasses Number of classes.
  * @param skewness Sampling skewness.
  * 
- * @returns A gamma histogram.
+ * @returns A Gamma histogram.
  */
-double *gamma(int nsamples, long nclasses)
+double *gamma(int nclasses, double skewness)
 {
 	double freq;       /* Class frequency. */
 	double *histogram; /* Histogram.       */
@@ -38,13 +38,13 @@ double *gamma(int nsamples, long nclasses)
 	/* Sanity check. */
 	assert(nclasses > 0);
 	assert(skewness > 0.0);
-	assert(skewness < 1.0)
+	assert(skewness < 1.0);
 
 	histogram = smalloc(nclasses*sizeof(int));
 
 	/* Build histogram. */
 	freq = 1.0;
-	for (long i = 0; i < nclasses; i++)
+	for (int i = 0; i < nclasses; i++)
 	{
 		freq *= skewness;
 		
