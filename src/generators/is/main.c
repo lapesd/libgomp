@@ -48,7 +48,7 @@
  * @brief Parameters for pseudo-random number generators.
  */
 /**@{*/
-#define SKEWNESS 0.25
+#define SKEWNESS 0.5
 /**@}*/
 
 /**
