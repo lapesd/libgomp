@@ -25,52 +25,31 @@
 /**
  * @brief Builds a gamma sample.
  * 
- * @param nsamples   Number of samples.
- * @param nintervals Number of sampling intervals.
+ * @param nsamples Number of classes.
+ * @param skewness Sampling skewness.
  * 
- * @returns A gamma sample.
+ * @returns A gamma histogram.
  */
-double *gamma(long nsamples, long nintervals)
+double *gamma(int nsamples, long nclasses)
 {
-	long k;
-	long residual;
-	long *histogram;
-	double *x;
+	double freq;       /* Class frequency. */
+	double *histogram; /* Histogram.       */
 	
 	/* Sanity check. */
-	assert(nsamples > 0);
-	assert(nintervals > 0);
+	assert(nclasses > 0);
+	assert(skewness > 0.0);
+	assert(skewness < 1.0)
 
-	histogram = smalloc(nintervals*sizeof(long));
-	x = smalloc(nsamples*sizeof(double));
+	histogram = smalloc(nclasses*sizeof(int));
 
-	k = nsamples;
-	residual = 0;
-	for (long i = 0; i < nintervals; i++)
+	/* Build histogram. */
+	freq = 1.0;
+	for (long i = 0; i < nclasses; i++)
 	{
-		long freq = k /= 2;
+		freq *= skewness;
 		
-		residual += freq;
 		histogram[i] = freq;
 	}
-	residual = nsamples - residual;
 	
-	if (residual > 0)
-	{
-		histogram[nintervals - 1] += residual/2;
-		histogram[nintervals - 2] += residual/2;
-	}
-	
-	/* Generate input data. */
-	k = 0;
-	for (long i = 0; i < nintervals; i++)
-	{
-		for (long j = 0; j < histogram[i]; j++)
-			x[k++] = i;
-	}
-	
-	/* House keeping. */
-	free(histogram);
-	
-	return (x);
+	return (histogram);
 }

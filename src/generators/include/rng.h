@@ -24,7 +24,7 @@
 	
 	/* Forward definitions. */
 	extern double *beta(int, double);
-	extern double *gamma(long, long);
+	extern double *gamma(int, double);
 	extern double *gaussian(long, long);
 	extern double *uniform(long, long);
 
