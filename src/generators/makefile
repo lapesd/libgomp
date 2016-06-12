@@ -27,14 +27,19 @@ SRC = $(wildcard rng/*.c)
 OBJ = $(SRC:.c=.o)
 
 # Executable files.
+EXEC_HISTOGRAM = histogram
 EXEC_IS = is_gen
 EXEC_MST = mst_gen
 
 # Conflicts.
-.PHONY: is
+.PHONY: is mst histogram
 
 # Builds common object files for data generators.
-all: is
+
+# Builds histogram generator.
+histogram: $(OBJ)
+	$(CC) $(CFLAGS) histogram/*.c -o $(BINDIR)/$(EXEC_HISTOGRAM) $(OBJ) $(LIBS)
+all: is histogram
 
 # Builds is kernel input data generator.
 is: $(OBJ)
