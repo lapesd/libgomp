@@ -68,7 +68,7 @@ function map_threads
 	fi
 	
 	export OMP_NUM_THREADS=$1
-	export GOMP_CPU_AFFINITY="${map[@]}"
+	export GOMP_CPU_AFFINITY="${AFFINITY[@]}"
 }
 
 #===============================================================================
