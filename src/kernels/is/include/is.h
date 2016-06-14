@@ -20,6 +20,17 @@
 #ifndef _IS_H_
 #define _IS_H_
 	
+	#include <rng.h>
+	
+	/**
+	 * @brief Default parameters for IS kernel.
+	 */
+	/**@{*/
+	#define IS_NNUMBERS 2147483648L /**< Number of numbers to sort.          */
+	#define IS_NCLASSES 32          /**< Number of classes.                  */
+	#define IS_PDF      RNG_BETA    /**< Input probability density function. */
+	/**@}*/
+	
 	/* Forward definitions. */
 	extern void integer_sort(int *, long);
 

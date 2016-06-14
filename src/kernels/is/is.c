@@ -152,7 +152,7 @@ void is(struct darray *da)
 /**
  * @brief integer sort kernel.
  */
-void integer_sort(long *numbers, long nnumbers)
+void integer_sort(int *numbers, long nnumbers)
 {
 	int min, max;            /* Max and min numbers.   */
 	int range;               /* Bucket range.          */

@@ -24,6 +24,15 @@
 #include <is.h>
 
 /**
+ * @brief Default parameters for IS kernel.
+ */
+/**@{*/
+long nnumbers = IS_NNUMBERS; /**< Number of numbers to sort.          */
+int nclasses = IS_NCLASSES;  /**< Number of classes.                  */
+int pdfid = IS_PDF;          /**< Input probability density function. */
+/**@}*/
+	 
+/**
  * @brief Reads input file. 
  * 
  * @param filename Input filename.
@@ -75,15 +84,15 @@ static void usage(void)
  */
 int main(int argc, char **argv)
 {
-	long nnumbers; /* Number of numbers. */
-	int *numbers; /* Numbers to sort.   */
+	int *numbers;
 	
 	/* Wrong usage. */
-	if (argc < 2)
+	if (argc > 2)
 		usage();
 		
 	/* Generate input data for MST. */
-	numbers = readinput(argv[1], &nnumbers);
+	numbers = (argc == 1) ? isrng(nclasses, &nnumbers, pdfid) :
+	                        readinput(argv[1], &nnumbers);
 	
 	integer_sort(numbers, nnumbers);
 
