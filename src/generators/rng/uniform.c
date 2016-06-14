@@ -22,56 +22,36 @@
 
 #include <util.h>
 
+
 /**
- * @brief Builds a Uniform sample.
+ * @brief Builds a Uniform histogram.
  * 
- * @param nsamples   Number of samples.
- * @param nintervals Number of sampling intervals.
+ * @param nclasses Number of classes.
+ * @param skewness Sampling skewness (unused).
  * 
- * @returns A Uniform sample.
+ * @returns A Uniform histogram.
  */
-double *uniform(long nsamples, long nintervals)
+double *uniform(int nclasses, double skewness)
 {
-	long k;
-	long residual;
-	long *histogram;
-	double *x;
+	double freq;       /* Class frequency. */
+	double *histogram; /* Histogram.       */
+	
+	((void) skewness);
 	
 	/* Sanity check. */
-	assert(nsamples > 0);
-	assert(nintervals > 0);
+	assert(nclasses > 0);
+	assert(skewness > 0.0);
+	assert(skewness < 1.0);
 
-	histogram = smalloc(nintervals*sizeof(long));
-	x = smalloc(nsamples*sizeof(double));
+	histogram = smalloc(nclasses*sizeof(double));
 
-	residual = 0;
-	for (long i = 0; i < nintervals; i += 2)
+	/* Build histogram. */
+	freq = 1.0/nclasses;
+	for (int i = 0; i < nclasses; i += 2)
 	{
-		long freq = nsamples/nintervals;
-		
-		residual += freq;
 		histogram[i] = freq;
 		histogram[i + 1] = freq;
 	}
-	residual = nsamples - (residual*2);
 	
-	if (residual > 0)
-	{
-		histogram[0] += residual/2;
-		histogram[nintervals - 1] += residual/2;
-	}
-	
-	
-	/* Generate input data. */
-	k = 0;
-	for (long i = 0; i < nintervals; i++)
-	{
-		for (long j = 0; j < histogram[i]; j++)
-			x[k++] = i;
-	}
-	
-	/* House keeping. */
-	free(histogram);
-	
-	return (x);
+	return (histogram);
 }

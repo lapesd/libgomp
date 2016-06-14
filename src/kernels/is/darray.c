@@ -77,7 +77,7 @@ static void darray_expand(struct darray *da)
  * @param da    Target dynamic array.
  * @param value Value.
  */
-void darray_append(struct darray *da, long value)
+void darray_append(struct darray *da, int value)
 {
 	/* Sanity check. */
 	assert(da != NULL);
@@ -115,7 +115,7 @@ long darray_get(struct darray *da, long idx)
  * @param idx   Index in dynamic array.
  * @param value Value to store.
  */
-void darray_set(struct darray *da, long idx, long value)
+void darray_set(struct darray *da, long idx, int value)
 {
 	/* Sanity check. */
 	assert(da != NULL);

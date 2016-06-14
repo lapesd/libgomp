@@ -45,13 +45,6 @@
 /**@}*/
 
 /**
- * @brief Parameters for pseudo-random number generators.
- */
-/**@{*/
-#define SKEWNESS 0.75
-/**@}*/
-
-/**
  * @brief Name of supported probability density functions.
  */
 static const char *pdfnames[NR_PDFS] = {
@@ -67,10 +60,10 @@ static const char *pdfnames[NR_PDFS] = {
 struct
 {
 	int nintervals;      /**< Number of sampling intervals.         */
-	long nnumbers;       /**< Number of points.                     */
+	double skewness;     /**< PDF skewness.                         */
 	const char *pdfname; /**< Name of probability density function. */
 	int pdfid;           /**< ID of probability density function.   */
-} args = {0, 0, NULL, 0};
+} args = {0, 0.0, NULL, 0};
  
 /**
  * @brief Prints program usage and exits.
@@ -82,12 +75,12 @@ static void usage(void)
 	printf("Options:\n");
 	printf("  --help                Prints this information and exits\n");
 	printf("  --nintervals <number> Number of sampling intervals\n");
-	printf("  --nnumbers <number>   Number of  numbers\n");
 	printf("  --pdf <name>          Probability desity function for random numbers.\n");
 	printf("        beta              a = 0.5 and b = 0.5\n");
 	printf("        gamma             a = 1.0 and b = 2.0 \n");
 	printf("        gaussian          x = 0.0 and std = 1.0\n");
 	printf("        uniform           a = 0.0 and b = 1.0\n");
+	printf("  --skewness <number>   PDF skewness\n");
 	
 	exit(EXIT_SUCCESS);
 }
@@ -105,8 +98,8 @@ static void readargs(int argc, const char **argv)
 	{
 		if (!strcmp(argv[i], "--nintervals"))
 			args.nintervals = atoi(argv[i + 1]);
-		else if (!strcmp(argv[i], "--nnumbers"))
-			args.nnumbers = atol(argv[i + 1]);
+		else if (!strcmp(argv[i], "--skewness"))
+			args.skewness = atof(argv[i + 1]);
 		else if (!strcmp(argv[i], "--pdf"))
 			args.pdfname = argv[i + 1];
 		else if (!strcmp(argv[i], "--help"))
@@ -116,8 +109,8 @@ static void readargs(int argc, const char **argv)
 	/* Check arguments. */
 	if (args.nintervals < 1)
 		error("invalid number of sampling intervals");
-	if (args.nnumbers < 1)
-		error("invalid number of tasks");
+	if ((args.skewness <= 0.0) || (args.skewness >= 1.0))
+		error("invalid skewness");
 	if (args.pdfname == NULL)
 		error("unsupported probability density function");
 	for (int i = 0; i < NR_PDFS; i++)
@@ -140,7 +133,6 @@ out:
  */
 int main(int argc, const char **argv)
 {
-	long n;
 	double *h;
 	
 	readargs(argc, argv);
@@ -150,17 +142,17 @@ int main(int argc, const char **argv)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
-			h = beta(args.nintervals, SKEWNESS);
+			h = beta(args.nintervals, args.skewness);
 			break;
 			
 		/* Gamma distribution. */
 		case RNG_GAMMA:
-			h = gamma(args.nintervals, SKEWNESS);
+			h = gamma(args.nintervals, args.skewness);
 			break;
 			
 		/* Gaussian distribution. */
 		case RNG_GAUSSIAN:
-			h = gaussian(args.nintervals, SKEWNESS);
+			h = gaussian(args.nintervals, args.skewness);
 			break;
 			
 		/* Fall trough. */
@@ -168,24 +160,13 @@ int main(int argc, const char **argv)
 			
 		/* Uniform distribution. */
 		case RNG_UNIFORM:
-			h = uniform(args.nintervals, SKEWNESS);
+			h = uniform(args.nintervals, args.skewness);
 			break;
 	}
 	
-	/* Adjust number of numbers. */
-	n = 0;
+	/* Dump histogram. */
 	for (int i = 0; i < args.nintervals; i++)
-		n += ceil(args.nnumbers*h[i]);
-	
-	/* Dump input data. */
-	printf("%ld\n", n);
-	for (int i = 0; i < args.nintervals; i++)
-	{
-		int nnumbers = ceil(args.nnumbers*h[i]);
-		
-		for (int j = 0; j < nnumbers; j++)
-			printf("%d\n", i);
-	}
+		printf("%lf\n", h[i]);
 	
 	/* House keeping. */
 	free(h);

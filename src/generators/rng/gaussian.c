@@ -23,55 +23,34 @@
 #include <util.h>
 
 /**
- * @brief Builds a Gaussian sample.
+ * @brief Builds a Gaussian histogram.
  * 
- * @param nsamples   Number of samples.
- * @param nintervals Number of sampling intervals.
+ * @param nclasses Number of classes.
+ * @param skewness Sampling skewness.
  * 
- * @returns A Gaussian sample.
+ * @returns A Gaussian histogram.
  */
-double *gaussian(long nsamples, long nintervals)
+double *gaussian(int nclasses, double skewness)
 {
-	long k;
-	long residual;
-	long *histogram;
-	double *x;
+	double freq;       /* Class frequency. */
+	double *histogram; /* Histogram.       */
 	
 	/* Sanity check. */
-	assert(nsamples > 0);
-	assert(nintervals > 0);
+	assert(nclasses > 0);
+	assert(skewness > 0.0);
+	assert(skewness < 1.0);
 
-	histogram = smalloc(nintervals*sizeof(long));
-	x = smalloc(nsamples*sizeof(double));
+	histogram = smalloc(nclasses*sizeof(double));
 
-	residual = 0;
-	for (long i = 0; i < nintervals/2; i++)
+	/* Build histogram. */
+	freq = 0.5;
+	for (int i = 0; i < nclasses/2; i++)
 	{
-		long freq = nsamples/(1 << (i + 2));
+		freq *= skewness;
 		
-		residual += freq;
-		histogram[nintervals/2 - i - 1] = freq;
-		histogram[nintervals/2 + i] = freq;
-	}
-	residual = nsamples - (residual*2);
-	
-	if (residual > 0)
-	{
-		histogram[0] += residual/2;
-		histogram[nintervals - 1] += residual/2;
+		histogram[nclasses/2 - i - 1] = freq;
+		histogram[nclasses/2 + i] = freq;
 	}
 	
-	
-	/* Generate input data. */
-	k = 0;
-	for (long i = 0; i < nintervals; i++)
-	{
-		for (long j = 0; j < histogram[i]; j++)
-			x[k++] = i;
-	}
-	
-	/* House keeping. */
-	free(histogram);
-	
-	return (x);
+	return (histogram);
 }
