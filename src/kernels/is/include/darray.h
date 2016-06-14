@@ -42,7 +42,6 @@
 	extern struct darray *darray_create(long);
 	extern void darray_destroy(darray_tt);
 	extern long darray_get(darray_tt, long);
-	extern void darray_set(darray_tt, long, int);
 	
 	/**
 	 * @brief Returns the size of a dynamic array.

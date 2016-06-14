@@ -41,7 +41,7 @@ struct darray *darray_create(long size)
 	/* Initialize array. */
 	da->size = 0;
 	da->maxsize = size;
-	da->elements = scalloc(size, sizeof(long));
+	da->elements = scalloc(size, sizeof(int));
 	
 	return (da);
 }
@@ -106,27 +106,5 @@ long darray_get(struct darray *da, long idx)
 		error("darray_get() out of bounds");
   
   return (da->elements[idx]);
-}
-
-/**
- * @brief Sets a value in a dynamic array.
- * 
- * @param da    Target dynamic array.
- * @param idx   Index in dynamic array.
- * @param value Value to store.
- */
-void darray_set(struct darray *da, long idx, int value)
-{
-	/* Sanity check. */
-	assert(da != NULL);
-	
-	if (idx < 0)
-		error("darray_set() out of bounds");
-	
-	/* Expand array. */
-	while (idx >= da->size++)
-		darray_append(da, 0);
-
-	da->elements[idx] = value;
 }
 
