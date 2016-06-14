@@ -17,15 +17,6 @@
 # MA 02110-1301, USA.
 #
 
-# Tweaks on toolchain.
-CFLAGS += -I include
-
-# Common C source files.
-SRC = $(wildcard rng/*.c)
-
-# Common Object files.
-OBJ = $(SRC:.c=.o)
-
 # Executable files.
 EXEC_HISTOGRAM = histogram
 EXEC_IS = is_gen
@@ -37,25 +28,20 @@ EXEC_MST = mst_gen
 # Builds common object files for data generators.
 
 # Builds histogram generator.
-histogram: $(OBJ)
-	$(CC) $(CFLAGS) histogram/*.c -o $(BINDIR)/$(EXEC_HISTOGRAM) $(OBJ) $(LIBS)
+histogram:
+	$(CC) $(CFLAGS) histogram/*.c -o $(BINDIR)/$(EXEC_HISTOGRAM) $(LIBS)
 all: is histogram
 
 # Builds is kernel input data generator.
-is: $(OBJ)
-	$(CC) $(CFLAGS) is/*.c -o $(BINDIR)/$(EXEC_IS) $(OBJ) $(LIBS)
+is:
+	$(CC) $(CFLAGS) is/*.c -o $(BINDIR)/$(EXEC_IS) $(LIBS)
 
 # Builds mst clustering kernel input data generator.
-mst: $(OBJ)
-	$(CC) $(CFLAGS) mst/*.c -o $(BINDIR)/$(EXEC_MST) $(OBJ) $(LIBS)
-
-# Builds object file from C source file.
-%.o: %.c
-	$(CC) $< $(CFLAGS) -c -o $@
+mst:
+	$(CC) $(CFLAGS) mst/*.c -o $(BINDIR)/$(EXEC_MST) $(LIBS)
 
 # Cleans compilation files.
 clean:
-	rm -f $(OBJ)
 	rm -f $(BINDIR)/$(EXEC_MST)
 	rm -f $(BINDIR)/$(EXEC_IS)
 
