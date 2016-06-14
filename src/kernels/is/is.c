@@ -25,6 +25,7 @@
 #include <profile.h>
 #include <darray.h>
 #include <util.h>
+#include <is.h>
 
 #if defined(_SCHEDULE_SRR_)
 extern void omp_set_workload(unsigned *, unsigned);
@@ -35,7 +36,7 @@ extern void omp_set_workload(unsigned *, unsigned);
  * 
  * @details Number of buckets. Adjust this to improve cache locality.
  */
-#define NR_BUCKETS 32
+#define NR_BUCKETS IS_NCLASSES
 
 /*
  * Exchange two numbers.
@@ -50,93 +51,24 @@ extern void omp_set_workload(unsigned *, unsigned);
 	if ((b) < (a))           \
 		exch((b), (a), (t)); \
 
-#define M 64
-
-/*
- * Quicksort partition.
+/**
+ * @brief Bubble sort.
+ * 
+ * @param a Target array.
+ * @param l Left index.
+ * @param r Right index.
  */
-static long partition(int *a, long l, long r)
+static void bubblesort(int *a, const long l, const long r)
 {
-	int v;     /* Partitioning element. */
-	int t;     /* Temporary element.    */
-	long i, j; /* Loop index.           */
+	long t;
 	
-	i = l - 1;
-	j = r;
-	v = a[r];
-	
-	while (1)
+	for (long i = l; i < r; i++)
 	{
-		while (a[++i] < v)
-			/* NOOP.*/ ;
-		
-		while (a[--j] > v)
+		for (long j = i + 1; j < r; j++)
 		{
-			if (j == l)
-				break;
+			if (a[j] < a[i])
+				compexgh(a[i], a[j], t);
 		}
-		
-		if (i >= j)
-			break;
-		
-		exch(a[i], a[j], t);
-	}
-	
-	exch(a[i], a[r], t);
-	
-	return (i);
-}
-
-/*
- * Quicksort.
- */
-static void quicksort(int *a, long l, long r)
-{
-	long i; /* Pivot.             */
-	int t;  /* Temporary element. */
-	
-	/* Fine grain stop. */
-	if ((r - l) <= M)
-		return;
-	
-	/* Avoid anomalous partition. */
-	exch(a[(l + r) >> 1], a[r - 1], t);
-	
-	/* Median of three. */
-	compexgh(a[l], a[r - 1], t);
-	compexgh(a[l], a[r], t);
-	compexgh(a[r - 1], a[r], t);
-	
-	/* Sort. */
-	i = partition(a, l + 1 , r - 1);
-	quicksort(a, l, i - 1);
-	quicksort(a, i + 1, r);
-}
-
-/*
- * Insertion sort.
- */
-static void insertion(int *a, long l, long r)
-{
-	int t;     /* Temporary value. */
-	int v;     /* Working element. */
-	long i, j; /* Loop indexes.    */
-	
-	for (i = r; i > l; i--)
-		compexgh(a[i - 1], a[i], t);
-	
-	for (i = l + 2; i <= r; i++)
-	{
-		j = i;
-		v = a[i];
-		
-		while (v < a[j - 1])
-		{
-			a[j] = a[j - 1];
-			j--;
-		}
-		
-		a[j] = v;
 	}
 }
 
@@ -145,8 +77,7 @@ static void insertion(int *a, long l, long r)
  */
 void is(struct darray *da)
 {
-	quicksort(da->elements, 0, da->size - 1);
-	insertion(da->elements, 0, da->size - 1);
+	bubblesort(da->elements, 0, da->size);
 }
 
 /**
@@ -158,6 +89,9 @@ void integer_sort(int *numbers, long nnumbers)
 	int range;               /* Bucket range.          */
 	long *indexes;           /* Index for buckets.     */
 	struct darray **buckets; /* Buckets.               */
+#if defined(_SCHEDULE_SRR_)
+	long _buckets_size[NR_BUCKETS];
+#endif
 
 	indexes = smalloc(NR_BUCKETS*sizeof(long));
 
@@ -179,7 +113,7 @@ void integer_sort(int *numbers, long nnumbers)
 		else if (numbers[i] < min)
 			min = numbers[i];
 	}
-		
+	
 	range = abs((max - min + 1)/NR_BUCKETS);
 		
 	/* Distribute numbers into buckets. */
@@ -192,8 +126,17 @@ void integer_sort(int *numbers, long nnumbers)
 		darray_append(buckets[j], numbers[i]);
 	}
 	
+	/* Build indexes. */
+	indexes[0] = 0;
+	for (int i = 1; i < NR_BUCKETS; i++)
+	{
+		indexes[i] = indexes[i - 1] + darray_size(buckets[i - 1]);
+#if defined(_SCHEDULE_SRR_)
+		_buckets_size[i] = darray_size(buckets[i]);
+#endif
+	}
+	
 	profile_start();
-		
 	/* Sort Each bucket. */
 #if defined(_SCHEDULE_STATIC_)
 	#pragma omp parallel for schedule(static)
@@ -202,37 +145,29 @@ void integer_sort(int *numbers, long nnumbers)
 #elif defined(_SCHEDULE_DYNAMIC_)
 	#pragma omp parallel for schedule(dynamic)
 #elif defined(_SCHEDULE_SRR_)
-	long _buckets_size1[NR_BUCKETS];
-	memcpy(_buckets_size1, &_buckets_size1[1], NR_BUCKETS*sizeof(long));
-	omp_set_workload((unsigned *)&_buckets_size1[1], NR_BUCKETS);
+	omp_set_workload((unsigned *)_buckets_size, NR_BUCKETS);
 	#pragma omp parallel for schedule(runtime)
 #endif
 	for (int i = 0; i < NR_BUCKETS; i++)
 	{
 		if (darray_size(buckets[i]) == 0)
 			continue;
-		
+	
 		is(buckets[i]);
 	}
 	
 	profile_end();
 	profile_dump();
-		
-	/* Build indexes. */
-	indexes[0] = 0;
-	for (int i = 1; i < NR_BUCKETS; i++)
-		indexes[i] = indexes[i - 1] + darray_size(buckets[i]);
 	
 	/* Rebuild array. */
 	#pragma omp parallel for schedule(dynamic)
 	for (int i = 0; i < NR_BUCKETS; i++)
 	{
 		long k = indexes[i];
-			
+		
 		for (long j = 0; j < darray_size(buckets[i]); j++)
 			numbers[k + j] = darray_get(buckets[i], j);
 	}
-	
 	
 	/* House keeping. */
 	for (int i = 0; i < NR_BUCKETS; i++)
