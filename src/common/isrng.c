@@ -74,11 +74,11 @@ int *isrng(int nclasses, long *nnumbers, int pdfid)
 			break;
 	}
 	
+	
 	/* Adjust number of numbers. */
 	n = 0;
 	for (int i = 0; i < nclasses; i++)
 		n += ceil(*nnumbers*h[i]);
-	*nnumbers = n;
 	
 	numbers = smalloc(n*sizeof(int));
 	
@@ -86,11 +86,12 @@ int *isrng(int nclasses, long *nnumbers, int pdfid)
 	k = 0;
 	for (int i = 0; i < nclasses; i++)
 	{
-		int nnumbers = ceil(n*h[i]);
+		long _nnumbers = ceil((*nnumbers)*h[i]);
 		
-		for (int j = 0; j < nnumbers; j++)
+		for (long j = 0; j < _nnumbers; j++)
 			numbers[k++] = i;
 	}
+	*nnumbers = n;
 	
 	/* House keeping. */
 	free(h);
