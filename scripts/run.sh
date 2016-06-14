@@ -20,26 +20,12 @@
 #
 # $1: Number of threads.
 # $2: Is simultaneous multithreading (SMT) enabled?
-# $3: Number of iterations
 #
 
 # Directories.
 BINDIR=$PWD/bin
-DATADIR=$PWD/data
 CSVDIR=$PWD/csv
 LIBDIR=$PWD/src/libgomp/libgomp/build/.libs
-
-# PDFs.
-PDFS=(beta gamma gaussian uniform)
-
-# IS kernel workload sizes.
-IS_SIZE=(33554432 67108864 134217728 268435456 536870912)
-
-# MST clustering kernel workload sizes.
-MST_SIZE=(65536 131072 262144 524288 1048576)
-
-# Workload skewness.
-SKEWNESS=(8 16 32)
 
 # Scheduling strategies.
 STRATEGIES=(static dynamic guided srr)
@@ -101,38 +87,14 @@ function build_csv
 
 #
 # Parses the IS kernel.
-#  $1 Workload PDF.
-#  $2 Workload skewness.
-#  $3 Scheduling strategy.
-#  $4 Number of threads.
+#  $1 Scheduling strategy.
+#  $2 Number of threads.
 #
 function parse_is
 {
-	for nnumbers in "${IS_SIZE[@]}"; do
-		for (( nthreads=1; nthreads <= $4; nthreads++ )); do
-			extract_variables is-$1-$nnumbers-$2-$3-$nthreads
-		done
-	done
+	extract_variables is-$1-$2
 	
-	build_csv is-$1-$nnumbers-$2-$3
-}
-
-#
-# Parses the MST clustering kernel.
-#  $1 Workload PDF.
-#  $2 Workload skewness.
-#  $3 Scheduling strategy.
-#  $4 Number of threads.
-#
-function parse_mst
-{
-	for npoints in "${MST_SIZE[@]}"; do
-		for (( nthreads=1; nthreads <= $4; nthreads++ )); do
-			extract_variables mst-$1-$npoints-$2-$3-$nthreads
-		done
-	done
-	
-	build_csv mst-$1-$npoints-$2-$3
+	build_csv is-$1
 }
 
 #===============================================================================
@@ -141,34 +103,13 @@ function parse_mst
 
 #
 # Runs the IS kernel.
-#  $1 Workload PDF.
-#  $2 Workload skewness.
-#  $3 Scheduling strategy.
-#  $4 Number of threads.
+#  $1 Scheduling strategy.
+#  $2 Number of threads.
 #
 function run_is
 {
-	echo "  IS  kernel with $4 thread(s)"
-	for nnumbers in "${IS_SIZE[@]}"; do
-		$BINDIR/is.$3 $DATADIR/is-$1-$nnumbers-$2.txt \
-		2>> is-$1-$nnumbers-$2-$3-$4.tmp
-	done
-}
-
-#
-# Runs the MST clustering kernel.
-#  $1 Workload PDF.
-#  $2 Workload skewness.
-#  $3 Scheduling strategy.
-#  $4 Number of threads.
-#
-function run_mst
-{
-	echo "  MST kernel with $4 thread(s)"
-	for npoints in "${MST_SIZE[@]}"; do
-		$BINDIR/mst.$3 $DATADIR/mst-$1-$npoints-$2.txt \
-		2>> mst-$1-$npoints-$2-$3-$4.tmp
-	done
+	echo "  IS  kernel with $2 thread(s)"
+	$BINDIR/is.$1 2>> is-$1-$2.tmp
 }
 
 #===============================================================================
@@ -179,22 +120,14 @@ mkdir -p $CSVDIR
 
 map_threads $1 $2
 
-for pdf in "${PDFS[@]}"; do
-	for strategy in "${STRATEGIES[@]}"; do
-		for skewness in "${SKEWNESS[@]}"; do
-			echo "== Running $strategy $pdf $skewness"
-			for (( niterations=0; niterations < $3; niterations++ )); do
-				for (( nthreads=1; nthreads <= $1; nthreads++ )); do
-					export LD_LIBRARY_PATH=$LIBDIR
-					export OMP_SCHEDULE="$strategy"
-					export OMP_NUM_THREADS=$nthreads
-					run_is  $pdf $skewness $strategy $nthreads
-					run_mst $pdf $skewness $strategy $nthreads
-				done
-			done
-			parse_is  $pdf $skewness $strategy $1
-			parse_mst $pdf $skewness $strategy $1
-			rm  -f *.tmp
-		done
+for strategy in "${STRATEGIES[@]}"; do
+	echo "== Running $strategy"
+	for (( nthreads=2; nthreads <= $1; nthreads++ )); do
+		export LD_LIBRARY_PATH=$LIBDIR
+		export OMP_SCHEDULE="$strategy"
+		export OMP_NUM_THREADS=$nthreads
+		run_is $strategy $nthreads
 	done
+	parse_is $strategy $1
+	rm  -f *.tmp
 done
