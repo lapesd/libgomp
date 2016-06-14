@@ -89,12 +89,14 @@ int main(int argc, char **argv)
 	/* Wrong usage. */
 	if (argc > 2)
 		usage();
-		
+	
 	/* Generate input data for MST. */
 	numbers = (argc == 1) ? isrng(nclasses, &nnumbers, pdfid) :
 	                        readinput(argv[1], &nnumbers);
 	
-	integer_sort(numbers, nnumbers);
+	/* Run IS kernel. */
+	for (int i = 0; i < IS_NITERATIONS; i++)	
+		integer_sort(numbers, nnumbers);
 
 	/* House keeping. */
 	free(numbers);
