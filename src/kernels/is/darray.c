@@ -67,8 +67,8 @@ void darray_destroy(struct darray *da)
  */
 static void darray_expand(struct darray *da)
 {	
-	da->maxsize <<= 1;
-	da->elements = srealloc(da->elements, sizeof(long)*da->maxsize);
+	da->maxsize *= 2;
+	da->elements = srealloc(da->elements, da->maxsize*sizeof(int));
 }
 
 /**
