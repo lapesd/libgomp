@@ -90,7 +90,7 @@ void integer_sort(int *numbers, long nnumbers)
 	long *indexes;           /* Index for buckets.     */
 	struct darray **buckets; /* Buckets.               */
 #if defined(_SCHEDULE_SRR_)
-	long _buckets_size[NR_BUCKETS];
+	unsigned _buckets_size[NR_BUCKETS];
 #endif
 
 	indexes = smalloc(NR_BUCKETS*sizeof(long));
@@ -129,12 +129,7 @@ void integer_sort(int *numbers, long nnumbers)
 	/* Build indexes. */
 	indexes[0] = 0;
 	for (int i = 1; i < NR_BUCKETS; i++)
-	{
 		indexes[i] = indexes[i - 1] + darray_size(buckets[i - 1]);
-#if defined(_SCHEDULE_SRR_)
-		_buckets_size[i] = darray_size(buckets[i]);
-#endif
-	}
 	
 	profile_start();
 	/* Sort Each bucket. */
@@ -145,14 +140,20 @@ void integer_sort(int *numbers, long nnumbers)
 #elif defined(_SCHEDULE_DYNAMIC_)
 	#pragma omp parallel for schedule(dynamic)
 #elif defined(_SCHEDULE_SRR_)
-	omp_set_workload((unsigned *)_buckets_size, NR_BUCKETS);
+	for (int i = 0; i < NR_BUCKETS; i++)
+	{
+		if (darray_size(buckets[i]) > UINT_MAX)
+			error("bucket size overflow");
+		_buckets_size[i] = darray_size(buckets[i]);
+	}
+	omp_set_workload(_buckets_size, NR_BUCKETS);
 	#pragma omp parallel for schedule(runtime)
 #endif
 	for (int i = 0; i < NR_BUCKETS; i++)
 	{
 		if (darray_size(buckets[i]) == 0)
 			continue;
-	
+		
 		is(buckets[i]);
 	}
 	
