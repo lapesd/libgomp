@@ -58,16 +58,18 @@ extern void omp_set_workload(unsigned *, unsigned);
  * @param l Left index.
  * @param r Right index.
  */
-static void bubblesort(int *a, const long l, const long r)
+static void insertion(int *a, long l, long r)
 {
 	long t;
 	
 	for (long i = l; i < r; i++)
 	{
-		for (long j = i + 1; j < r; j++)
+		long j = i;
+		
+		while ((j > l) && (a[j - 1] > a[j]))
 		{
-			if (a[j] < a[i])
-				compexgh(a[i], a[j], t);
+			exch(a[j - 1], a[j], t);
+			j--;
 		}
 	}
 }
@@ -77,7 +79,7 @@ static void bubblesort(int *a, const long l, const long r)
  */
 void is(struct darray *da)
 {
-	bubblesort(da->elements, 0, da->size);
+	insertion(da->elements, 0, da->size);
 }
 
 /**
