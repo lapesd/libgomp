@@ -50,28 +50,41 @@ extern void omp_set_workload(unsigned *, unsigned);
 #define compexgh(a, b, t)    \
 	if ((b) < (a))           \
 		exch((b), (a), (t)); \
-
-/**
- * @brief Bubble sort.
- * 
- * @param a Target array.
- * @param l Left index.
- * @param r Right index.
- */
-static void insertion(int *a, long l, long r)
-{
-	long t;
-	
-	for (long i = l; i < r; i++)
-	{
-		long j = i;
 		
-		while ((j > l) && (a[j - 1] > a[j]))
-		{
-			exch(a[j - 1], a[j], t);
-			j--;
-		}
-	}
+long max (int *a, long n, long i, long j, long k) {
+    long m = i;
+    
+    if ((j < n) && (a[j] > a[m]))
+        m = j;
+    if ((k < n) && (a[k] > a[m]))
+        m = k;
+    
+    return m;
+}
+ 
+void downheap (int *a, long n, int i) {
+	int t;
+    while (1) {
+        long j = max(a, n, i, 2 * i + 1, 2 * i + 2);
+        if (j == i) {
+            break;
+        }
+        exch(a[i], a[j], t);
+        i = j;
+    }
+}
+ 
+void heapsort (int *a, long n)
+{
+	int t;
+	
+    for (long i = (n - 2) / 2; i >= 0; i--) {
+        downheap(a, n, i);
+    }
+    for (long i = 0; i < n; i++) {
+		exch(a[0], a[n - i - 1], t)
+        downheap(a, n - i - 1, 0);
+    }
 }
 
 /*
@@ -79,7 +92,7 @@ static void insertion(int *a, long l, long r)
  */
 void is(struct darray *da)
 {
-	insertion(da->elements, 0, da->size);
+	heapsort(da->elements, da->size);
 }
 
 /**
