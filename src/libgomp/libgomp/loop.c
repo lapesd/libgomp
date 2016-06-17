@@ -39,7 +39,7 @@
 unsigned *__tasks; /* Tasks.           */
 unsigned __ntasks; /* Number of tasks. */
 
-#define N 20
+#define N 128
 
 /*
  * Exchange two numbers.
