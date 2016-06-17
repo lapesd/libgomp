@@ -27,7 +27,7 @@
 #include <util.h>
 #include <is.h>
 
-#define MAX_THREADS 32
+#define MAX_THREADS 16
 
 #if defined(_SCHEDULE_SRR_)
 extern void omp_set_workload(unsigned *, unsigned);
@@ -172,7 +172,7 @@ void integer_sort(int *numbers, long nnumbers)
 	{
 		if (darray_size(buckets[i]) == 0)
 			continue;
-		
+
 		workload[omp_get_thread_num()] += darray_size(buckets[i]);
 		
 		is(buckets[i]);
@@ -182,7 +182,7 @@ void integer_sort(int *numbers, long nnumbers)
 	profile_dump();
 	
 	for (int i = 0; i < MAX_THREADS; i++)
-	fprintf(stderr, "t%d: %ld\n", i, workload[i]);
+	fprintf(stderr, "%ld\n", workload[i]);
 	
 	/* Rebuild array. */
 	#pragma omp parallel for schedule(dynamic)
