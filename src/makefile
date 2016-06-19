@@ -27,12 +27,17 @@ OBJ = $(SRC:.c=.o)
 LIBS := $(OBJ) $(LIBS)
 
 # Phony list.
+.PHONY: benchmark
 .PHONY: generators
 .PHONY: kernels
 .PHONY: libgomp
 
 # Builds everything.
-all: generators kernels
+all: benchmark kernels generators
+
+# Builds benchmark.
+benchmark: $(OBJ)
+	cd benchmark && $(MAKE) all
 
 # Builds kernels.
 kernels: $(OBJ)
@@ -60,5 +65,6 @@ libgomp-clean:
 # Cleans everything.
 clean:
 	rm -f $(OBJ)
+	cd benchmark && $(MAKE) clean
 	cd generators && $(MAKE) clean
 	cd kernels && $(MAKE) clean
