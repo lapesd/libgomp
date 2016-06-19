@@ -25,12 +25,12 @@ EXEC_MST = mst_gen
 # Conflicts.
 .PHONY: is mst histogram
 
-# Builds common object files for data generators.
+# Builds everything.
+all: is histogram
 
 # Builds histogram generator.
 histogram:
 	$(CC) $(CFLAGS) histogram/*.c -o $(BINDIR)/$(EXEC_HISTOGRAM) $(LIBS)
-all: is histogram
 
 # Builds is kernel input data generator.
 is:
@@ -42,6 +42,7 @@ mst:
 
 # Cleans compilation files.
 clean:
+	rm -f $(BINDIR)/$(EXEC_HISTOGRAM)
 	rm -f $(BINDIR)/$(EXEC_MST)
 	rm -f $(BINDIR)/$(EXEC_IS)
 
