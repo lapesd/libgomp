@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <profile.h>
 #include <util.h>
 
 #if defined(_SCHEDULE_SRR_)
@@ -62,6 +63,8 @@ void benchmark(
 #endif
 
 	memset(loads, 0, nthreads*sizeof(unsigned));
+	
+	profile_start();
 
 	/* Sort Each bucket. */
 #if defined(_SCHEDULE_STATIC_)
@@ -81,7 +84,10 @@ void benchmark(
 		loads[tid] += tasks[i];
 		kernel(tasks[i], load);
 	}
-		
+	
+	profile_end();
+	profile_dump();
+	
 	/* Print statistics. */
 	for (unsigned i = 0; i < nthreads; i++)
 		printf("thread %d: %u\n", i, loads[i]);
