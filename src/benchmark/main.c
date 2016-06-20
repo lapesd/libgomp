@@ -150,6 +150,7 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations)
 {
 	double *h;
 	unsigned *tasks;
+	const int FACTOR = 10000;
 	
 	tasks = smalloc(niterations*sizeof(unsigned));
 	
@@ -178,10 +179,13 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations)
 		case RNG_UNIFORM:
 			h = uniform(niterations, SKEWNESS);
 			break;
-	}	
+	}
+	
+	for (unsigned i = 0; i < niterations; i++)
+		tasks[i] = h[i]*FACTOR;
 	
 	/* House keeping. */
-	free(h);	
+	free(h);
 	
 	return (tasks);
 }
