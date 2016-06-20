@@ -34,15 +34,17 @@ extern void omp_set_workload(unsigned *, unsigned);
 /**
  * @brief Benchmark kernel.
  */
-void kernel(int n, int load)
+int kernel(int n, long load)
 {
-	int sum = 0;
+	long sum = 0;
 	
 	for (int i = 0; i < n; i++)
 	{
-		for (int j = 0; j < load; j++)
-			sum++;		
+		for (long j = 0; j < load; j++)
+			sum += i+j;
 	}
+	
+	return (sum);
 }
 
 /**
@@ -81,7 +83,8 @@ void benchmark(
 	{
 		int tid = omp_get_thread_num();
 		
-		loads[tid] += tasks[i];
+		for (long j = 0; j < load; j++)
+			loads[tid] += tasks[i];
 		kernel(tasks[i], load);
 	}
 	

@@ -234,22 +234,21 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
 	{
 		double x;
 		
-		x = h[i]*FACTOR;
+		x = h[i];
 		
 		switch (kernel)
 		{
-				
-			/* Linear kernel. */
+			/* Logarithm kernel. */
 			case KERNEL_LOGARITHM:
 				x = log(x)/log(2);
 				break;
 				
-			/* Linear kernel. */
+			/* Quadratic kernel. */
 			case KERNEL_QUADRATIC:
 				x = pow(x, 2);
 				break;
 				
-			/* Linear kernel. */
+			/* Cubic kernel. */
 			case KERNEL_CUBIC:
 				x = pow(x, 3);
 				break;
@@ -259,7 +258,7 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
 			default:
 				break;
 		}
-		tasks[i] = ceil(x);
+		tasks[i] = ceil(x*FACTOR);
 	}
 	
 	/* House keeping. */
