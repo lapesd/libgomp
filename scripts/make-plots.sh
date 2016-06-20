@@ -19,6 +19,7 @@
 
 #
 # $1: Number of threads.
+# $2: Number of iterations.
 #
 
 # Directories.
@@ -27,15 +28,6 @@ CSVDIR=$PWD/csv
 # PDFs.
 PDFS=(beta gamma gaussian uniform)
 
-# IS kernel workload sizes.
-IS_SIZE=(33554432 67108864 134217728 268435456 536870912)
-
-# MST clustering kernel workload sizes.
-MST_SIZE=(65536 131072 262144 524288 1048576)
-
-# Workload skewness.
-SKEWNESS=(8 16 32)
-
 # Scheduling strategies.
 STRATEGIES=(static dynamic guided srr)
 
@@ -43,54 +35,36 @@ STRATEGIES=(static dynamic guided srr)
 # Make plots on gnuplot.
 #   $1 Kernel.
 #   $2 Workload PDF.
-#   $3 Workload size.
-#   $4 Workload skewness.
-#   $5 Number of threads.
+#   $3 Number of iterations.
+#   $4 Number of threads.
 #
 function make_plots
 {
 	# Time plots.
 	gnuplot \
-		-e "static='$/$1-$2-$3-$4-static-cycles.csv'"    \
-		-e "guided='$CSVDIR/$1-$2-$3-$4-guided-cycles.csv'"    \
-		-e "dynamic='$CSVDIR/$1-$2-$3-$4-dynamic-cycles.csv'"  \
-		-e "srr='$CSVDIR/$1-$2-$3-$4-srr-cycles.csv'"          \
-		-e "nthreads=$5"                                       \
+		-e "static='$CSVDIR/$1-$2-$3-static-cycles.csv'"    \
+		-e "guided='$CSVDIR/$1-$2-$3-guided-cycles.csv'"    \
+		-e "dynamic='$CSVDIR/$1-$2-$3-dynamic-cycles.csv'"  \
+		-e "srr='$CSVDIR/$1-$2-$3-srr-cycles.csv'"          \
+		-e "nthreads='$5'"                                  \
 		scripts/kernel-time.gnuplot 
 }
 
 #
-# Parses the IS kernel.
+# Parses benchmark kernel.
 #  $1 Workload PDF.
-#  $2 Workload skewness.
+#  $2 Number of iterations.
 #  $3 Number of threads.
 #
-function plot_is
+function plot_benchmark
 {
-	for nnumbers in "${IS_SIZE[@]}"; do
-		make_plots is $1 $nnumbers $2 $3
-	done
+	make_plots benchmark $1 $2 $3
 }
 
-#
-# Parses the MST clustering kernel.
-#  $1 Workload PDF.
-#  $2 Workload skewness.
-#  $3 Number of threads.
-#
-function plot_mst
-{
-	for npoints in "${MST_SIZE[@]}"; do
-		make_plots mst $1 $npoints $2 $3
-	done
-}
 
 for pdf in "${PDFS[@]}"; do
 	for strategy in "${STRATEGIES[@]}"; do
-		for skewness in "${SKEWNESS[@]}"; do
-			plot_is $pdf $skewness $1
-			plot_mst $pdf $skewness $1
-		done
+		plot_benchmark $pdf $2 $1
 	done
 done
 

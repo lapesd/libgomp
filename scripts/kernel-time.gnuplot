@@ -60,6 +60,6 @@ set grid ytics
 set key height 1 width 1 box lw 1
 
 # Plot
-plot "guided.tmp" using ($0+2):1 with linespoints ls 1 title "Guided",   \
-     "dynamic.tmp" using ($0+2):1 with linespoints ls 2 title "Dynamic", \
-     "srr.tmp" using ($0+2):1 with linespoints ls 3 title "SRR"
+plot static using ($0+2):1 with linespoints ls 1 title "Guided",   \
+     dynamic using ($0+2):1 with linespoints ls 2 title "Dynamic", \
+     srr using ($0+2):1 with linespoints ls 3 title "SRR"
