@@ -29,7 +29,7 @@ CSVDIR=$PWD/csv
 LIBDIR=$PWD/src/libgomp/libgomp/build/.libs
 
 # Load adjust accordingly.
-LOAD=100000000
+LOAD=500000000
 
 # Number of iterations.
 NITERATIONS=$3
@@ -119,7 +119,7 @@ function parse_benchmark
 {
 	extract_variables benchmark-$3-$NITERATIONS-$1-$2
 	
-	build_csv benchmark-$1
+	build_csv benchmark-$3-$NITERATIONS-$1
 }
 
 #===============================================================================
