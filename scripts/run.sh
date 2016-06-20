@@ -20,6 +20,7 @@
 #
 # $1: Number of threads.
 # $2: Is simultaneous multithreading (SMT) enabled?
+# #3: Number of loop iterations.
 #
 
 # Directories.
@@ -27,8 +28,17 @@ BINDIR=$PWD/bin
 CSVDIR=$PWD/csv
 LIBDIR=$PWD/src/libgomp/libgomp/build/.libs
 
+# Load adjust accordingly.
+LOAD=100000000
+
+# Number of iterations.
+NITERATIONS=$3
+
 # Scheduling strategies.
 STRATEGIES=(static dynamic guided srr)
+
+# Workloads.
+WORKLOAD=(beta gamma gaussian uniform)
 
 #===============================================================================
 #                              UTILITY ROUTINES
@@ -96,6 +106,18 @@ function parse_is
 	
 	build_csv is-$1
 }
+#
+# Parses the benchmark.
+#  $1 Scheduling strategy.
+#  $2 Number of threads.
+#  $3 Workload.
+#
+function parse_benchmark
+{
+	extract_variables benchmark-$3-$NITERATIONS-$1-$2.tmp
+	
+	build_csv benchmark-$1
+}
 
 #===============================================================================
 #                                 RUN ROUTINES
@@ -112,6 +134,23 @@ function run_is
 	$BINDIR/is.$1 2>> is-$1-$2.tmp
 }
 
+#
+# Run synthetic benchmark.
+#  $1 Scheduling strategy.
+#  $2 Number of threads.
+#  $3 Workload.
+#
+function run_benchmark
+{
+	echo "  Benchmark with $2 thread(s)"
+	$BINDIR/benchmark.$1 \
+		--kernel $KERNEL_TYPE      \
+		--load $LOAD               \
+		--nthreads $2              \
+		--niterations $NITERATIONS \
+	2>> benchmark-$3-$NITERATIONS-$1-$2.tmp
+}
+
 #===============================================================================
 #                                 MAIN ROUTINE
 #===============================================================================
@@ -121,13 +160,15 @@ mkdir -p $CSVDIR
 map_threads $1 $2
 
 for strategy in "${STRATEGIES[@]}"; do
-	echo "== Running $strategy"
-	for (( nthreads=2; nthreads <= $1; nthreads++ )); do
-		export LD_LIBRARY_PATH=$LIBDIR
-		export OMP_SCHEDULE="$strategy"
-		export OMP_NUM_THREADS=$nthreads
-		run_is $strategy $nthreads
+	for workload in "${WORKLOAD[@]}"; do
+		echo "== Running $strategy"
+		for (( nthreads=2; nthreads <= $1; nthreads++ )); do
+			export LD_LIBRARY_PATH=$LIBDIR
+			export OMP_SCHEDULE="$strategy"
+			export OMP_NUM_THREADS=$nthreads
+			run_benchmark $strategy $nthreads $workload
+		done
+		parse_benchmark $strategy $1 $workload
+		rm  -f *.tmp
 	done
-	parse_is $strategy $1
-	rm  -f *.tmp
 done
