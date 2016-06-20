@@ -278,7 +278,7 @@ int main(int argc, const const char **argv)
 	
 	tasks = create_tasks(args.pdfid, args.niterations, args.kernelid);
 
-	for (i = 0; i < NITERATIONS; i++)
+	for (int i = 0; i < NITERATIONS; i++)
 		benchmark(tasks, args.niterations, args.nthreads, args.load);
 		
 	/* House keeping. */

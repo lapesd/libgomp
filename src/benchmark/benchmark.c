@@ -93,7 +93,7 @@ void benchmark(
 	
 	/* Print statistics. */
 	for (unsigned i = 0; i < nthreads; i++)
-		printf("thread %d: %u\n", i, loads[i]);
+		fprintf(stderr, "thread %d: %u\n", i, loads[i]);
 		
 	/* House  keeping. */
 #if defined(_SCHEDULE_SRR_)
