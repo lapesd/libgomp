@@ -83,6 +83,10 @@ function extract_variables
 	grep "Total Cycles" $1.tmp \
 	| cut -d" " -f 3           \
 	>> $CSVDIR/$1-cycles.tmp
+	
+	grep "thread" $1.tmp \
+	| cut -d" " -f 3           \
+	>> $CSVDIR/$1-workload.tmp
 }
 
 #
