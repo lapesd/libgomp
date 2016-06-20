@@ -34,6 +34,9 @@ LOAD=100000000
 # Number of iterations.
 NITERATIONS=$3
 
+# Kernel type.
+KERNEL_TYPE=linear
+
 # Scheduling strategies.
 STRATEGIES=(static dynamic guided srr)
 
@@ -114,7 +117,7 @@ function parse_is
 #
 function parse_benchmark
 {
-	extract_variables benchmark-$3-$NITERATIONS-$1-$2.tmp
+	extract_variables benchmark-$3-$NITERATIONS-$1-$2
 	
 	build_csv benchmark-$1
 }
@@ -148,6 +151,7 @@ function run_benchmark
 		--load $LOAD               \
 		--nthreads $2              \
 		--niterations $NITERATIONS \
+		--pdf $3                   \
 	2>> benchmark-$3-$NITERATIONS-$1-$2.tmp
 }
 
@@ -169,6 +173,6 @@ for strategy in "${STRATEGIES[@]}"; do
 			run_benchmark $strategy $nthreads $workload
 		done
 		parse_benchmark $strategy $1 $workload
-		rm  -f *.tmp
+		rm -f *.tmp
 	done
 done
