@@ -52,6 +52,21 @@
 /**@}*/
 
 /**
+ * @brief Number of supported kernels.
+ */
+#define NR_KERNELS 4
+
+/**
+ * @brief Name of supported kernel types.
+ */
+/**@{*/
+#define KERNEL_LINEAR    1
+#define KERNEL_LOGARITHM 2
+#define KERNEL_QUADRATIC 3
+#define KERNEL_CUBIC     4
+/**@}*/
+
+/**
  * @brief Name of supported probability density functions.
  */
 static const char *pdfnames[NR_PDFS] = {
@@ -59,6 +74,16 @@ static const char *pdfnames[NR_PDFS] = {
 	"gamma",    /* Gammma.   */
 	"gaussian", /* Gaussian. */
 	"uniform"   /* Uniform.  */
+};
+
+/**
+ * @brief Name of supported kernel types.
+ */
+static const char *kernelnames[NR_KERNELS] = {
+	"linear",    /* Linear.    */
+	"logarithm", /* Logarithm. */
+	"quadratic", /* Quadratic. */
+	"cubic"      /* Cubic.     */
 };
 
 /**
@@ -70,8 +95,9 @@ static struct
 	unsigned niterations;  /**< Number of tasks.                       */
 	unsigned chunksize;    /**< Chunk size for the dynamic scheduling. */
 	unsigned load;         /**< Kernel load.                           */
-	unsigned pdfid;
-} args = { 0, 0, 0, 0, 0 };
+	unsigned pdfid;        /**< Probability density function.          */
+	int kernelid;          /**< Kernel type.                           */
+} args = { 0, 0, 0, 0, 0, 0 };
 
 /**
  * @brief Prints program usage and exits.
@@ -84,6 +110,11 @@ static void usage(void)
 	printf("Brief: loop scheduler simulator\n");
 	printf("Options:\n");
 	printf("  --help                Display this message\n");
+	printf("  --kernel <name>       Kernel type\n");
+	printf("           linear       Linear O(n)\n");
+	printf("           logarithm    Logarithm O(n log n)\n");
+	printf("           quadratic    Quadratic O(n^2)\n");
+	printf("           cubic        Cubic O(n^3)\n");
 	printf("  --load <num>          kernel load\n");
 	printf("  --nthreads <num>      Number of threads\n");
 	printf("  --niterations <num>   Number of loop iterations\n");
@@ -104,12 +135,15 @@ static void usage(void)
 static void readargs(int argc, const char **argv)
 {
 	const char *pdfname = NULL;
+	const char *kernelname = NULL;
 	
 	/* Parse command line arguments. */
 	for (int i = 1; i < argc; i++)
 	{
 		if (!strcmp(argv[i], "--niterations"))
 			args.niterations = atoi(argv[i + 1]);
+		else if (!strcmp(argv[i], "--kernel"))
+			kernelname = argv[i + 1];
 		else if (!strcmp(argv[i], "--load"))
 			args.load = atof(argv[i + 1]);
 		else if (!strcmp(argv[i], "--nthreads"))
@@ -127,18 +161,33 @@ static void readargs(int argc, const char **argv)
 		error("invalid number of loop iterations");
 	else if (args.load == 0)
 		error("invalid kernel load");
-	if (pdfname == NULL)
-		error("unsupported probability density function");
-	for (int i = 0; i < NR_PDFS; i++)
+	if (pdfname != NULL)
 	{
-		if (!strcmp(pdfname, pdfnames[i]))
+		for (int i = 0; i < NR_PDFS; i++)
 		{
-			args.pdfid = i + 1;
-			goto out;
+			if (!strcmp(pdfname, pdfnames[i]))
+			{
+				args.pdfid = i + 1;
+				goto out1;
+			}
 		}
 	}
-	error("unsupported probability density function");
+	error("unsupported probability density function"); 
 	
+out1:
+	if (kernelname)
+	{
+		for (int i = 0; i < NR_KERNELS; i++)
+		{
+			if (!strcmp(kernelname, kernelnames[i]))
+			{
+				args.kernelid = i + 1;
+				goto out;
+			}
+		}
+	}
+	error("unsupported kernel type");
+
 out:
 	return;
 }
@@ -146,7 +195,7 @@ out:
 /**
  * @brief Create tasks.
  */
-static unsigned *create_tasks(unsigned pdfid, unsigned niterations)
+static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
 {
 	double *h;
 	unsigned *tasks;
@@ -182,7 +231,36 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations)
 	}
 	
 	for (unsigned i = 0; i < niterations; i++)
-		tasks[i] = h[i]*FACTOR;
+	{
+		double x;
+		
+		x = h[i]*FACTOR;
+		
+		switch (kernel)
+		{
+				
+			/* Linear kernel. */
+			case KERNEL_LOGARITHM:
+				x = log(x)/log(2);
+				break;
+				
+			/* Linear kernel. */
+			case KERNEL_QUADRATIC:
+				x = pow(x, 2);
+				break;
+				
+			/* Linear kernel. */
+			case KERNEL_CUBIC:
+				x = pow(x, 3);
+				break;
+				
+			/* Linear kernel. */
+			case KERNEL_LINEAR:
+			default:
+				break;
+		}
+		tasks[i] = ceil(x);
+	}
 	
 	/* House keeping. */
 	free(h);
@@ -199,7 +277,7 @@ int main(int argc, const const char **argv)
 	
 	readargs(argc, argv);
 	
-	tasks = create_tasks(args.pdfid, args.niterations);
+	tasks = create_tasks(args.pdfid, args.niterations, args.kernelid);
 
 	benchmark(tasks, args.niterations, args.nthreads, args.load);
 		
