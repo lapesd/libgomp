@@ -27,9 +27,9 @@ set style line 3 lc rgb "#228B22" lw 4 pt 11 ps 2.1
 
 set terminal postscript eps enhanced color
 
-set print "guided.tmp"
+set print "static.tmp"
 do for [i=1:nthreads] {
-	stats guided using (column(i)) nooutput
+	stats static using (column(i)) nooutput
 	print STATS_mean/FREQUENCY
 }
 
@@ -60,6 +60,6 @@ set grid ytics
 set key height 1 width 1 box lw 1
 
 # Plot
-plot static using ($0+2):1 with linespoints ls 1 title "Guided",   \
+plot static using ($0+2):1 with linespoints ls 1 title "Static",   \
      dynamic using ($0+2):1 with linespoints ls 2 title "Dynamic", \
      srr using ($0+2):1 with linespoints ls 3 title "SRR"
