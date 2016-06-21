@@ -43,6 +43,9 @@ STRATEGIES=(static dynamic srr)
 # Workloads.
 WORKLOAD=(gamma gaussian)
 
+# Workload sorting.
+WORKLOAD=(ascending)
+
 # Skewness
 SKEWNESS=(0.50 0.65 0.80)
 
@@ -85,24 +88,11 @@ function extract_variables
 {	
 	grep "Total Cycles" $1.tmp \
 	| cut -d" " -f 3           \
-	>> $CSVDIR/$1-cycles.tmp
+	>> $CSVDIR/$1-cycles.csv
 	
 	grep "thread" $1.tmp \
 	| cut -d" " -f 3           \
-	>> $CSVDIR/$1-workload.tmp
-}
-
-#
-# Builds a csv of a variable.
-#   $1 Filename prefix.
-#
-function build_csv
-{
-	paste -d";"                  \
-		$CSVDIR/$1-?-cycles.tmp  \
-	> $CSVDIR/$1-cycles.csv
-	
-	rm -f $CSVDIR/$1-*.tmp
+	>> $CSVDIR/$1-workload.csv
 }
 
 #
@@ -115,8 +105,6 @@ function build_csv
 function parse_benchmark
 {
 	extract_variables benchmark-$3-$4-$NITERATIONS-$1-$2
-	
-	build_csv benchmark-$3-$4-$NITERATIONS-$1
 }
 
 #===============================================================================
@@ -140,6 +128,7 @@ function run_benchmark
 		--niterations $NITERATIONS \
 		--pdf $3                   \
 		--skewness $4              \
+		--sort ascending           \
 	2>> benchmark-$3-$4-$NITERATIONS-$1-$2.tmp
 }
 
@@ -154,13 +143,11 @@ map_threads $1 $2
 for strategy in "${STRATEGIES[@]}"; do
 	for skewness in "${SKEWNESS[@]}"; do
 		for workload in "${WORKLOAD[@]}"; do
-			echo "== Running $strategy"
-			for (( nthreads=2; nthreads <= $1; nthreads++ )); do
-				export LD_LIBRARY_PATH=$LIBDIR
-				export OMP_SCHEDULE="$strategy"
-				export OMP_NUM_THREADS=$nthreads
-				run_benchmark $strategy $nthreads $workload $skewness
-			done
+			echo "== Running $strategy $skewness $workload"
+			export LD_LIBRARY_PATH=$LIBDIR
+			export OMP_SCHEDULE="$strategy"
+			export OMP_NUM_THREADS=$1
+			run_benchmark $strategy $1 $workload $skewness
 			parse_benchmark $strategy $1 $workload $skewness
 			rm -f *.tmp
 		done
