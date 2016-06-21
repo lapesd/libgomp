@@ -97,7 +97,8 @@ static struct
 	unsigned load;         /**< Kernel load.                           */
 	unsigned pdfid;        /**< Probability density function.          */
 	int kernelid;          /**< Kernel type.                           */
-} args = { 0, 0, 0, 0, 0, 0 };
+	double skewness;       /**< Probability density function skewness. */
+} args = { 0, 0, 0, 0, 0, 0, 0.0 };
 
 /**
  * @brief Prints program usage and exits.
@@ -123,6 +124,7 @@ static void usage(void)
 	printf("        gamma             a = 1.0 and b = 2.0 \n");
 	printf("        gaussian          x = 0.0 and std = 1.0\n");
 	printf("        uniform           a = 0.0 and b = 1.0\n");
+	printf("  --skewness <num>      Skewness for probability density function\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -152,13 +154,17 @@ static void readargs(int argc, const char **argv)
 			pdfname = argv[i + 1];
 		else if (!strcmp(argv[i], "--help"))
 			usage();
+		else if (!strcmp(argv[i], "--skewness"))
+			args.skewness = atof(argv[i + 1]);
 	}
 	
 	/* Check arguments. */
 	if (args.nthreads == 0)
 		error("invalid number of threads");
-	if (args.niterations == 0)
+	else if (args.niterations == 0)
 		error("invalid number of loop iterations");
+	else if (args.skewness == 0.0)
+		error("invalid skewness for probability density function");
 	else if (args.load == 0)
 		error("invalid kernel load");
 	if (pdfname != NULL)
@@ -195,7 +201,8 @@ out:
 /**
  * @brief Create tasks.
  */
-static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
+static unsigned *create_tasks
+(unsigned pdfid, unsigned niterations, double skewness, int kernel)
 {
 	double *h;
 	unsigned *tasks;
@@ -208,17 +215,17 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
-			h = beta(niterations, SKEWNESS);
+			h = beta(niterations, skewness);
 			break;
 			
 		/* Gamma distribution. */
 		case RNG_GAMMA:
-			h = gamma(niterations, SKEWNESS);
+			h = gamma(niterations, skewness);
 			break;
 			
 		/* Gaussian distribution. */
 		case RNG_GAUSSIAN:
-			h = gaussian(niterations, SKEWNESS);
+			h = gaussian(niterations, skewness);
 			break;
 			
 		/* Fall trough. */
@@ -226,7 +233,7 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
 			
 		/* Uniform distribution. */
 		case RNG_UNIFORM:
-			h = uniform(niterations, SKEWNESS);
+			h = uniform(niterations, skewness);
 			break;
 	}
 	
@@ -276,9 +283,9 @@ int main(int argc, const const char **argv)
 	
 	readargs(argc, argv);
 	
-	tasks = create_tasks(args.pdfid, args.niterations, args.kernelid);
+	tasks = create_tasks(args.pdfid, args.niterations, args.skewness, args.kernelid);
 
-	for (i = 0; i < NITERATIONS; i++)
+	for (int i = 0; i < NITERATIONS; i++)
 		benchmark(tasks, args.niterations, args.nthreads, args.load);
 		
 	/* House keeping. */
