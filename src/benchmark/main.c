@@ -52,6 +52,13 @@
 /**@}*/
 
 /**
+ * @brief Sorting order types.
+ */
+#define SORT_ASCENDING  1 /**< Ascending sort.  */
+#define SORT_DESCENDING 2 /**< Descending sort. */
+#define SORT_RANDOM     3 /**< Random sort.     */
+
+/**
  * @brief Number of supported kernels.
  */
 #define NR_KERNELS 4
@@ -98,7 +105,8 @@ static struct
 	unsigned pdfid;        /**< Probability density function.          */
 	int kernelid;          /**< Kernel type.                           */
 	double skewness;       /**< Probability density function skewness. */
-} args = { 0, 0, 0, 0, 0, 0, 0.0 };
+	int sort;              /**< Sorting order.                         */
+} args = { 0, 0, 0, 0, 0, 0, 0.0, 0 };
 
 /**
  * @brief Prints program usage and exits.
@@ -125,6 +133,10 @@ static void usage(void)
 	printf("        gaussian          x = 0.0 and std = 1.0\n");
 	printf("        uniform           a = 0.0 and b = 1.0\n");
 	printf("  --skewness <num>      Skewness for probability density function\n");
+	printf("  --sort <type>         Task sorting\n");
+	printf("         ascending      Ascending order\n");
+	printf("         descending     Descending order\n");
+	printf("         random         Random order\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -137,6 +149,7 @@ static void usage(void)
 static void readargs(int argc, const char **argv)
 {
 	const char *pdfname = NULL;
+	const char *sortname = NULL;
 	const char *kernelname = NULL;
 	
 	/* Parse command line arguments. */
@@ -156,6 +169,8 @@ static void readargs(int argc, const char **argv)
 			usage();
 		else if (!strcmp(argv[i], "--skewness"))
 			args.skewness = atof(argv[i + 1]);
+		else if (!strcmp(argv[i], "--sort"))
+			sortname = argv[i + 1];
 	}
 	
 	/* Check arguments. */
@@ -167,6 +182,17 @@ static void readargs(int argc, const char **argv)
 		error("invalid skewness for probability density function");
 	else if (args.load == 0)
 		error("invalid kernel load");
+	else if (sortname != NULL)
+	{
+		if (!strcmp(sortname, "ascending"))
+			args.sort = SORT_ASCENDING;
+		else if (!strcmp(sortname, "descending"))
+			args.sort = SORT_DESCENDING;
+		else if (!strcmp(sortname, "random"))
+			args.sort = SORT_RANDOM;
+		else
+			error("unsupported sorting order");
+	}
 	if (pdfname != NULL)
 	{
 		for (int i = 0; i < NR_PDFS; i++)
@@ -242,6 +268,33 @@ static double *histogram_create(unsigned pdf, unsigned niterations, double skewn
 }
 
 /**
+ * @brief Sorts tasks.
+ * 
+ * @param tasks  Target tasks.
+ * @param ntasks Number of tasks.
+ * @param type   Sorting type.
+ */
+static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
+{
+	((void)type);
+	
+	for (unsigned i = 0; i < ntasks; i++)
+	{
+		for (unsigned j = i + 1; j < ntasks; j++)
+		{
+			if (tasks[j] < tasks[i])
+			{
+				unsigned t;
+				
+				t = tasks[j];
+				tasks[j] = tasks[i];
+				tasks[i] = t;
+			}
+		}
+	}
+}
+
+/**
  * @brief Create tasks.
  * 
  * @brief h Workload histogram.
@@ -303,6 +356,7 @@ int main(int argc, const const char **argv)
 	/* Build synthetic workload */
 	h = histogram_create(args.pdfid, args.niterations, args.skewness);
 	tasks = tasks_create(h, args.niterations, args.kernelid);
+	tasks_sort(tasks, args.niterations, args.sort);
 
 	/* Run synthetic benchmark. */
 	for (int i = 0; i < NITERATIONS; i++)
