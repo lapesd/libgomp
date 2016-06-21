@@ -166,7 +166,7 @@ int main(int argc, const char **argv)
 	
 	/* Dump histogram. */
 	for (int i = 0; i < args.nintervals; i++)
-		printf("%lf\n", h[i]);
+		printf("%.8lf\n", h[i]);
 	
 	/* House keeping. */
 	free(h);

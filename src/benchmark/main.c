@@ -52,6 +52,13 @@
 /**@}*/
 
 /**
+ * @brief Sorting order types.
+ */
+#define SORT_ASCENDING  1 /**< Ascending sort.  */
+#define SORT_DESCENDING 2 /**< Descending sort. */
+#define SORT_RANDOM     3 /**< Random sort.     */
+
+/**
  * @brief Number of supported kernels.
  */
 #define NR_KERNELS 4
@@ -97,7 +104,9 @@ static struct
 	unsigned load;         /**< Kernel load.                           */
 	unsigned pdfid;        /**< Probability density function.          */
 	int kernelid;          /**< Kernel type.                           */
-} args = { 0, 0, 0, 0, 0, 0 };
+	double skewness;       /**< Probability density function skewness. */
+	int sort;              /**< Sorting order.                         */
+} args = { 0, 0, 0, 0, 0, 0, 0.0, 0 };
 
 /**
  * @brief Prints program usage and exits.
@@ -123,6 +132,11 @@ static void usage(void)
 	printf("        gamma             a = 1.0 and b = 2.0 \n");
 	printf("        gaussian          x = 0.0 and std = 1.0\n");
 	printf("        uniform           a = 0.0 and b = 1.0\n");
+	printf("  --skewness <num>      Skewness for probability density function\n");
+	printf("  --sort <type>         Task sorting\n");
+	printf("         ascending      Ascending order\n");
+	printf("         descending     Descending order\n");
+	printf("         random         Random order\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -135,6 +149,7 @@ static void usage(void)
 static void readargs(int argc, const char **argv)
 {
 	const char *pdfname = NULL;
+	const char *sortname = NULL;
 	const char *kernelname = NULL;
 	
 	/* Parse command line arguments. */
@@ -152,15 +167,32 @@ static void readargs(int argc, const char **argv)
 			pdfname = argv[i + 1];
 		else if (!strcmp(argv[i], "--help"))
 			usage();
+		else if (!strcmp(argv[i], "--skewness"))
+			args.skewness = atof(argv[i + 1]);
+		else if (!strcmp(argv[i], "--sort"))
+			sortname = argv[i + 1];
 	}
 	
 	/* Check arguments. */
 	if (args.nthreads == 0)
 		error("invalid number of threads");
-	if (args.niterations == 0)
+	else if (args.niterations == 0)
 		error("invalid number of loop iterations");
+	else if (args.skewness == 0.0)
+		error("invalid skewness for probability density function");
 	else if (args.load == 0)
 		error("invalid kernel load");
+	else if (sortname != NULL)
+	{
+		if (!strcmp(sortname, "ascending"))
+			args.sort = SORT_ASCENDING;
+		else if (!strcmp(sortname, "descending"))
+			args.sort = SORT_DESCENDING;
+		else if (!strcmp(sortname, "random"))
+			args.sort = SORT_RANDOM;
+		else
+			error("unsupported sorting order");
+	}
 	if (pdfname != NULL)
 	{
 		for (int i = 0; i < NR_PDFS; i++)
@@ -193,32 +225,34 @@ out:
 }
 
 /**
- * @brief Create tasks.
+ * @brief Builds workload histogram.
+ * 
+ * @param pdf         Probability density functions.
+ * @param niterations Number of iterations in the workload.
+ * @param skewness    Skew ness for probability density function.
+ * 
+ * @returns Workload histogram.
  */
-static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
+static double *histogram_create(unsigned pdf, unsigned niterations, double skewness)
 {
 	double *h;
-	unsigned *tasks;
-	const int FACTOR = 10000;
-	
-	tasks = smalloc(niterations*sizeof(unsigned));
 	
 	/* Generate input data. */
-	switch (pdfid)
+	switch (pdf)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
-			h = beta(niterations, SKEWNESS);
+			h = beta(niterations, skewness);
 			break;
 			
 		/* Gamma distribution. */
 		case RNG_GAMMA:
-			h = gamma(niterations, SKEWNESS);
+			h = gamma(niterations, skewness);
 			break;
 			
 		/* Gaussian distribution. */
 		case RNG_GAUSSIAN:
-			h = gaussian(niterations, SKEWNESS);
+			h = gaussian(niterations, skewness);
 			break;
 			
 		/* Fall trough. */
@@ -226,21 +260,66 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
 			
 		/* Uniform distribution. */
 		case RNG_UNIFORM:
-			h = uniform(niterations, SKEWNESS);
+			h = uniform(niterations, skewness);
 			break;
 	}
+	
+	return (h);
+}
+
+/**
+ * @brief Sorts tasks.
+ * 
+ * @param tasks  Target tasks.
+ * @param ntasks Number of tasks.
+ * @param type   Sorting type.
+ */
+static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
+{
+	((void)type);
+	
+	for (unsigned i = 0; i < ntasks; i++)
+	{
+		for (unsigned j = i + 1; j < ntasks; j++)
+		{
+			if (tasks[j] < tasks[i])
+			{
+				unsigned t;
+				
+				t = tasks[j];
+				tasks[j] = tasks[i];
+				tasks[i] = t;
+			}
+		}
+	}
+}
+
+/**
+ * @brief Create tasks.
+ * 
+ * @brief h Workload histogram.
+ * @param kernel Kernel type.
+ * 
+ * @returns Tasks.
+ */
+static unsigned *tasks_create(double *h, unsigned niterations, int kernel)
+{
+	unsigned *tasks;
+	const int FACTOR = 10000;
+	
+	tasks = smalloc(niterations*sizeof(unsigned));
 	
 	for (unsigned i = 0; i < niterations; i++)
 	{
 		double x;
 		
-		x = h[i];
+		x = h[i]*FACTOR;
 		
 		switch (kernel)
 		{
 			/* Logarithm kernel. */
 			case KERNEL_LOGARITHM:
-				x = log(x)/log(2);
+				x = x*(log(x)/log(2));
 				break;
 				
 			/* Quadratic kernel. */
@@ -258,11 +337,8 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
 			default:
 				break;
 		}
-		tasks[i] = ceil(x*FACTOR);
+		tasks[i] = ceil(x);
 	}
-	
-	/* House keeping. */
-	free(h);
 	
 	return (tasks);
 }
@@ -272,16 +348,22 @@ static unsigned *create_tasks(unsigned pdfid, unsigned niterations, int kernel)
  */
 int main(int argc, const const char **argv)
 {
-	unsigned *tasks;
+	double *h;       /* Data workload histogram. */
+	unsigned *tasks; /* Workload tasks.          */
 	
 	readargs(argc, argv);
 	
-	tasks = create_tasks(args.pdfid, args.niterations, args.kernelid);
+	/* Build synthetic workload */
+	h = histogram_create(args.pdfid, args.niterations, args.skewness);
+	tasks = tasks_create(h, args.niterations, args.kernelid);
+	tasks_sort(tasks, args.niterations, args.sort);
 
+	/* Run synthetic benchmark. */
 	for (int i = 0; i < NITERATIONS; i++)
 		benchmark(tasks, args.niterations, args.nthreads, args.load);
 		
 	/* House keeping. */
+	free(h);;
 	free(tasks);
 	
 	return (EXIT_SUCCESS);

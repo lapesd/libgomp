@@ -38,10 +38,16 @@ NITERATIONS=$3
 KERNEL_TYPE=linear
 
 # Scheduling strategies.
-STRATEGIES=(static dynamic guided srr)
+STRATEGIES=(static dynamic srr)
 
 # Workloads.
-WORKLOAD=(beta gamma gaussian uniform)
+WORKLOAD=(gamma gaussian)
+
+# Workload sorting.
+WORKLOAD=(ascending)
+
+# Skewness
+SKEWNESS=(0.50 0.65 0.80)
 
 #===============================================================================
 #                              UTILITY ROUTINES
@@ -82,48 +88,23 @@ function extract_variables
 {	
 	grep "Total Cycles" $1.tmp \
 	| cut -d" " -f 3           \
-	>> $CSVDIR/$1-cycles.tmp
+	>> $CSVDIR/$1-cycles.csv
 	
 	grep "thread" $1.tmp \
 	| cut -d" " -f 3           \
-	>> $CSVDIR/$1-workload.tmp
+	>> $CSVDIR/$1-workload.csv
 }
 
-#
-# Builds a csv of a variable.
-#   $1 Filename prefix.
-#
-function build_csv
-{
-	paste -d";"                  \
-		$CSVDIR/$1-?-cycles.tmp  \
-	> $CSVDIR/$1-cycles.csv
-	
-	rm -f $CSVDIR/$1-*.tmp
-}
-
-#
-# Parses the IS kernel.
-#  $1 Scheduling strategy.
-#  $2 Number of threads.
-#
-function parse_is
-{
-	extract_variables is-$1-$2
-	
-	build_csv is-$1
-}
 #
 # Parses the benchmark.
 #  $1 Scheduling strategy.
 #  $2 Number of threads.
 #  $3 Workload.
+#  $4 Skewness.
 #
 function parse_benchmark
 {
-	extract_variables benchmark-$3-$NITERATIONS-$1-$2
-	
-	build_csv benchmark-$3-$NITERATIONS-$1
+	extract_variables benchmark-$3-$4-$NITERATIONS-$1-$2
 }
 
 #===============================================================================
@@ -131,21 +112,11 @@ function parse_benchmark
 #===============================================================================
 
 #
-# Runs the IS kernel.
-#  $1 Scheduling strategy.
-#  $2 Number of threads.
-#
-function run_is
-{
-	echo "  IS  kernel with $2 thread(s)"
-	$BINDIR/is.$1 2>> is-$1-$2.tmp
-}
-
-#
 # Run synthetic benchmark.
 #  $1 Scheduling strategy.
 #  $2 Number of threads.
 #  $3 Workload.
+#  $4 Skewness
 #
 function run_benchmark
 {
@@ -156,7 +127,9 @@ function run_benchmark
 		--nthreads $2              \
 		--niterations $NITERATIONS \
 		--pdf $3                   \
-	2>> benchmark-$3-$NITERATIONS-$1-$2.tmp
+		--skewness $4              \
+		--sort ascending           \
+	2>> benchmark-$3-$4-$NITERATIONS-$1-$2.tmp
 }
 
 #===============================================================================
@@ -168,15 +141,15 @@ mkdir -p $CSVDIR
 map_threads $1 $2
 
 for strategy in "${STRATEGIES[@]}"; do
-	for workload in "${WORKLOAD[@]}"; do
-		echo "== Running $strategy"
-		for (( nthreads=2; nthreads <= $1; nthreads++ )); do
+	for skewness in "${SKEWNESS[@]}"; do
+		for workload in "${WORKLOAD[@]}"; do
+			echo "== Running $strategy $skewness $workload"
 			export LD_LIBRARY_PATH=$LIBDIR
 			export OMP_SCHEDULE="$strategy"
-			export OMP_NUM_THREADS=$nthreads
-			run_benchmark $strategy $nthreads $workload
+			export OMP_NUM_THREADS=$1
+			run_benchmark $strategy $1 $workload $skewness
+			parse_benchmark $strategy $1 $workload $skewness
+			rm -f *.tmp
 		done
-		parse_benchmark $strategy $1 $workload
-		rm -f *.tmp
 	done
 done

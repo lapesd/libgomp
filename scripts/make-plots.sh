@@ -26,10 +26,13 @@
 CSVDIR=$PWD/csv
 
 # PDFs.
-PDFS=(beta gamma gaussian uniform)
+PDFS=(gamma gaussian)
+
+# Skewness
+SKEWNESS=(0.50 0.65 0.80)
 
 # Scheduling strategies.
-STRATEGIES=(static dynamic guided srr)
+STRATEGIES=(static dynamic srr)
 
 #
 # Make plots on gnuplot.
@@ -37,34 +40,37 @@ STRATEGIES=(static dynamic guided srr)
 #   $2 Workload PDF.
 #   $3 Number of iterations.
 #   $4 Number of threads.
+#   $5 Skewness.
 #
 function make_plots
 {
 	# Time plots.
 	gnuplot \
-		-e "static='$CSVDIR/$1-$2-$3-static-cycles.csv'"    \
-		-e "guided='$CSVDIR/$1-$2-$3-guided-cycles.csv'"    \
-		-e "dynamic='$CSVDIR/$1-$2-$3-dynamic-cycles.csv'"  \
-		-e "srr='$CSVDIR/$1-$2-$3-srr-cycles.csv'"          \
-		-e "nthreads='$5'"                                  \
+		-e "static='$CSVDIR/$1-$2-$5-$3-static-cycles.csv'"    \
+		-e "dynamic='$CSVDIR/$1-$2-$5-$3-dynamic-cycles.csv'"  \
+		-e "srr='$CSVDIR/$1-$2-$5-$3-srr-cycles.csv'"          \
+		-e "nthreads='$4'"                                     \
 		scripts/kernel-time.gnuplot 
 }
 
 #
 # Parses benchmark kernel.
-#  $1 Workload PDF.
-#  $2 Number of iterations.
-#  $3 Number of threads.
+#   $1 Workload PDF.
+#   $2 Number of iterations.
+#   $3 Number of threads.
+#   $4 Skewness.
 #
 function plot_benchmark
 {
-	make_plots benchmark $1 $2 $3
+	make_plots benchmark $1 $2 $3 $4
 }
 
 
 for pdf in "${PDFS[@]}"; do
-	for strategy in "${STRATEGIES[@]}"; do
-		plot_benchmark $pdf $2 $1
+	for skewness in "${SKEWNESS[@]}"; do
+		for strategy in "${STRATEGIES[@]}"; do
+			plot_benchmark $pdf $2 $1 $skewness
+		done
 	done
 done
 
