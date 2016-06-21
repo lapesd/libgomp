@@ -199,19 +199,20 @@ out:
 }
 
 /**
- * @brief Create tasks.
+ * @brief Builds workload histogram.
+ * 
+ * @param pdf         Probability density functions.
+ * @param niterations Number of iterations in the workload.
+ * @param skewness    Skew ness for probability density function.
+ * 
+ * @returns Workload histogram.
  */
-static unsigned *create_tasks
-(unsigned pdfid, unsigned niterations, double skewness, int kernel)
+static double *histogram_create(unsigned pdf, unsigned niterations, double skewness)
 {
 	double *h;
-	unsigned *tasks;
-	const int FACTOR = 10000;
-	
-	tasks = smalloc(niterations*sizeof(unsigned));
 	
 	/* Generate input data. */
-	switch (pdfid)
+	switch (pdf)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
@@ -236,6 +237,24 @@ static unsigned *create_tasks
 			h = uniform(niterations, skewness);
 			break;
 	}
+	
+	return (h);
+}
+
+/**
+ * @brief Create tasks.
+ * 
+ * @brief h Workload histogram.
+ * @param kernel Kernel type.
+ * 
+ * @returns Tasks.
+ */
+static unsigned *tasks_create(double *h, unsigned niterations, int kernel)
+{
+	unsigned *tasks;
+	const int FACTOR = 10000;
+	
+	tasks = smalloc(niterations*sizeof(unsigned));
 	
 	for (unsigned i = 0; i < niterations; i++)
 	{
@@ -268,9 +287,6 @@ static unsigned *create_tasks
 		tasks[i] = ceil(x);
 	}
 	
-	/* House keeping. */
-	free(h);
-	
 	return (tasks);
 }
 
@@ -279,16 +295,21 @@ static unsigned *create_tasks
  */
 int main(int argc, const const char **argv)
 {
-	unsigned *tasks;
+	double *h;       /* Data workload histogram. */
+	unsigned *tasks; /* Workload tasks.          */
 	
 	readargs(argc, argv);
 	
-	tasks = create_tasks(args.pdfid, args.niterations, args.skewness, args.kernelid);
+	/* Build synthetic workload */
+	h = histogram_create(args.pdfid, args.niterations, args.skewness);
+	tasks = tasks_create(h, args.niterations, args.kernelid);
 
+	/* Run synthetic benchmark. */
 	for (int i = 0; i < NITERATIONS; i++)
 		benchmark(tasks, args.niterations, args.nthreads, args.load);
 		
 	/* House keeping. */
+	free(h);;
 	free(tasks);
 	
 	return (EXIT_SUCCESS);
