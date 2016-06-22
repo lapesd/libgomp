@@ -29,7 +29,7 @@ CSVDIR=$PWD/csv
 LIBDIR=$PWD/src/libgomp/libgomp/build/.libs
 
 # Load adjust accordingly.
-LOAD=500000000
+LOAD=4000000000
 
 # Number of iterations.
 NITERATIONS=$3
@@ -44,10 +44,10 @@ STRATEGIES=(static dynamic srr)
 WORKLOAD=(gamma gaussian)
 
 # Workload sorting.
-WORKLOAD=(ascending)
+SORT=(ascending)
 
 # Skewness
-SKEWNESS=(0.50 0.65 0.80)
+SKEWNESS=(0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90)
 
 #===============================================================================
 #                              UTILITY ROUTINES
