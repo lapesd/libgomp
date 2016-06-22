@@ -305,7 +305,7 @@ static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
 static unsigned *tasks_create(double *h, unsigned niterations, int kernel)
 {
 	unsigned *tasks;
-	const int FACTOR = 10000;
+	const int FACTOR = 100000000;
 	
 	tasks = smalloc(niterations*sizeof(unsigned));
 	
