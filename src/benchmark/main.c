@@ -268,6 +268,21 @@ static double *histogram_create(unsigned pdf, unsigned niterations, double skewn
 }
 
 /**
+ * @brief Swaps two unsigned integers.
+ * 
+ * @param u1 First unsigned integer.
+ * @param u2 Second unsigned integer. 
+ */
+static inline void swap(unsigned *u1, unsigned *u2)
+{
+	unsigned t;
+	
+	t = *u1;
+	*u1 = *u2;
+	*u2 = t;
+}
+
+/**
  * @brief Sorts tasks.
  * 
  * @param tasks  Target tasks.
@@ -276,26 +291,33 @@ static double *histogram_create(unsigned pdf, unsigned niterations, double skewn
  */
 static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
 {
-	((void)type);
+	/* Random sort. */
+	if (type == SORT_RANDOM)
+	{
+		for (unsigned i = 0; i < ntasks - 1; i++)
+		{
+			unsigned j;
+			
+			j = i + rand()/(RAND_MAX/(ntasks - i) + 1);
+			
+			swap(&tasks[i], &tasks[j]);
+		}
+	}
 
-	if (type == SORT_ASCENDING)
+	/* Ascending sort. */
+	else if (type == SORT_ASCENDING)
 	{	
 		for (unsigned i = 0; i < ntasks; i++)
 		{
 			for (unsigned j = i + 1; j < ntasks; j++)
 			{
 				if (tasks[j] < tasks[i])
-				{
-					unsigned t;
-				
-					t = tasks[j];
-					tasks[j] = tasks[i];
-					tasks[i] = t;
-				}
+					swap(&tasks[i], &tasks[j]);
 			}
 		}
 	}
 
+	/* Descending sort. */
 	else
 	{
 		for (unsigned i = 0; i < ntasks; i++)
@@ -303,13 +325,7 @@ static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
 			for (unsigned j = i + 1; j < ntasks; j++)
 			{
 				if (tasks[j] > tasks[i])
-                                {
-                                        unsigned t;
-
-                                        t = tasks[j];
-                                        tasks[j] = tasks[i];
-                                        tasks[i] = t;
-				}
+					swap(&tasks[i], &tasks[j]);
 			}
 		}
 	}
