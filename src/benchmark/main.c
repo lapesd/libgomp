@@ -277,18 +277,39 @@ static double *histogram_create(unsigned pdf, unsigned niterations, double skewn
 static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
 {
 	((void)type);
-	
-	for (unsigned i = 0; i < ntasks; i++)
-	{
-		for (unsigned j = i + 1; j < ntasks; j++)
+
+	if (type == SORT_ASCENDING)
+	{	
+		for (unsigned i = 0; i < ntasks; i++)
 		{
-			if (tasks[j] < tasks[i])
+			for (unsigned j = i + 1; j < ntasks; j++)
 			{
-				unsigned t;
+				if (tasks[j] < tasks[i])
+				{
+					unsigned t;
 				
-				t = tasks[j];
-				tasks[j] = tasks[i];
-				tasks[i] = t;
+					t = tasks[j];
+					tasks[j] = tasks[i];
+					tasks[i] = t;
+				}
+			}
+		}
+	}
+
+	else
+	{
+		for (unsigned i = 0; i < ntasks; i++)
+		{
+			for (unsigned j = i + 1; j < ntasks; j++)
+			{
+				if (tasks[j] > tasks[i])
+                                {
+                                        unsigned t;
+
+                                        t = tasks[j];
+                                        tasks[j] = tasks[i];
+                                        tasks[i] = t;
+				}
 			}
 		}
 	}
