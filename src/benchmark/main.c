@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include <rng.h>
 #include <util.h>
@@ -41,7 +42,7 @@
 #define RNG_BETA     1 /**< Beta.     */
 #define RNG_GAMMA    2 /**< Gamma.    */
 #define RNG_GAUSSIAN 3 /**< Gaussian. */
-#define RNG_UNIFORM  4 /**< Uniform.  */
+#define RNG_POISSON  4 /**< Poisson.  */
 /**@}*/
 
 /**
@@ -80,7 +81,7 @@ static const char *pdfnames[NR_PDFS] = {
 	"beta",     /* Beta.     */
 	"gamma",    /* Gammma.   */
 	"gaussian", /* Gaussian. */
-	"uniform"   /* Uniform.  */
+	"poisson"   /* Poisson.  */
 };
 
 /**
@@ -131,7 +132,7 @@ static void usage(void)
 	printf("        beta              a = 0.5 and b = 0.5\n");
 	printf("        gamma             a = 1.0 and b = 2.0 \n");
 	printf("        gaussian          x = 0.0 and std = 1.0\n");
-	printf("        uniform           a = 0.0 and b = 1.0\n");
+	printf("        poisson                                \n");
 	printf("  --skewness <num>      Skewness for probability density function\n");
 	printf("  --sort <type>         Task sorting\n");
 	printf("         ascending      Ascending order\n");
@@ -258,9 +259,9 @@ static double *histogram_create(unsigned pdf, unsigned niterations, double skewn
 		/* Fall trough. */
 		default:
 			
-		/* Uniform distribution. */
-		case RNG_UNIFORM:
-			h = uniform(niterations, skewness);
+		/* Poisson distribution. */
+		case RNG_POISSON:
+			h = poisson(niterations, skewness);
 			break;
 	}
 	
@@ -268,18 +269,54 @@ static double *histogram_create(unsigned pdf, unsigned niterations, double skewn
 }
 
 /**
- * @brief Swaps two unsigned integers.
+ * @brief Greater than.
  * 
- * @param u1 First unsigned integer.
- * @param u2 Second unsigned integer. 
+ * @param a1 First element.
+ * @param a2 Second element.
+ * 
+ * @returns One if @p a1 is greater than @p a2 and minus one otherwise.
  */
-static inline void swap(unsigned *u1, unsigned *u2)
+static int greater(void *a1, void *a2)
 {
-	unsigned t;
+	return ((*((unsigned *)a1) > *((unsigned *)a2)) ? 1 : -1);
+}
+
+/**
+ * @brief Less than.
+ * 
+ * @param a1 First element.
+ * @param a2 Second element.
+ * 
+ * @returns One if @p a1 is less than @p a2 and minus one otherwise.
+ */
+static int greater(void *a1, void *a2)
+{
+	return ((*((unsigned *)a1) < *((unsigned *)a2)) ? 1 : -1);
+}
+
+/**
+ * @brief Shuffles and array.
+ * 
+ * @param a Target array.
+ * @param n Size of target array.
+ */
+static void array_shuffle(unsigned *a, unsigned n)
+{
+	/* Let us be totally random. */
+	srand(time(NULL));
 	
-	t = *u1;
-	*u1 = *u2;
-	*u2 = t;
+	/* Shuffle array. */
+	for (unsigned i = 0; i < n - 1; i++)
+	{
+		unsigned j; /* Shuffle index.  */
+		unsigned t; /* Temporary data. */
+		
+		j = i + rand()/(RAND_MAX/(n - i) + 1);
+			
+		t = a[i];
+		a[i] = a[j];
+		a[j] = t;
+	}
 }
 
 /**
@@ -293,42 +330,15 @@ static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
 {
 	/* Random sort. */
 	if (type == SORT_RANDOM)
-	{
-		for (unsigned i = 0; i < ntasks - 1; i++)
-		{
-			unsigned j;
-			
-			j = i + rand()/(RAND_MAX/(ntasks - i) + 1);
-			
-			swap(&tasks[i], &tasks[j]);
-		}
-	}
+		array_shuffle(tasks, ntasks);
 
 	/* Ascending sort. */
 	else if (type == SORT_ASCENDING)
-	{	
-		for (unsigned i = 0; i < ntasks; i++)
-		{
-			for (unsigned j = i + 1; j < ntasks; j++)
-			{
-				if (tasks[j] < tasks[i])
-					swap(&tasks[i], &tasks[j]);
-			}
-		}
-	}
+		qsort(tasks, ntasks, sizeof(unsigned), greater);
 
 	/* Descending sort. */
 	else
-	{
-		for (unsigned i = 0; i < ntasks; i++)
-		{
-			for (unsigned j = i + 1; j < ntasks; j++)
-			{
-				if (tasks[j] > tasks[i])
-					swap(&tasks[i], &tasks[j]);
-			}
-		}
-	}
+		qsort(tasks, ntasks, sizeof(unsigned), less);
 }
 
 /**

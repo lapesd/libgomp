@@ -41,7 +41,7 @@
 #define RNG_BETA     1 /**< Beta.     */
 #define RNG_GAMMA    2 /**< Gamma.    */
 #define RNG_GAUSSIAN 3 /**< Gaussian. */
-#define RNG_UNIFORM  4 /**< Uniform.  */
+#define RNG_POISSON  4 /**< Poisson.  */
 /**@}*/
 
 /**
@@ -58,7 +58,7 @@ static const char *pdfnames[NR_PDFS] = {
 	"beta",     /* Beta.     */
 	"gamma",    /* Gammma.   */
 	"gaussian", /* Gaussian. */
-	"uniform"   /* Uniform.  */
+	"poisson"   /* Poisson.  */
 };
 
 /**
@@ -87,7 +87,7 @@ static void usage(void)
 	printf("        beta              a = 0.5 and b = 0.5\n");
 	printf("        gamma             a = 1.0 and b = 2.0 \n");
 	printf("        gaussian          x = 0.0 and std = 1.0\n");
-	printf("        uniform           a = 0.0 and b = 1.0\n");
+	printf("        poisson                                \n");
 	
 	exit(EXIT_SUCCESS);
 }
@@ -166,9 +166,9 @@ int main(int argc, const char **argv)
 		/* Fall trough. */
 		default:
 			
-		/* Uniform distribution. */
-		case RNG_UNIFORM:
-			h = uniform(args.nintervals, SKEWNESS);
+		/* Poisson distribution. */
+		case RNG_POISSON:
+			h = poisson(args.nintervals, SKEWNESS);
 			break;
 	}
 	

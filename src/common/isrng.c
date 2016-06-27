@@ -68,9 +68,9 @@ int *isrng(int nclasses, long *nnumbers, int pdfid)
 		/* Fall trough. */
 		default:
 			
-		/* Uniform distribution. */
-		case RNG_UNIFORM:
-			h = uniform(nclasses, SKEWNESS);
+		/* Poisson distribution. */
+		case RNG_POISSON:
+			h = poisson(nclasses, SKEWNESS);
 			break;
 	}
 	
