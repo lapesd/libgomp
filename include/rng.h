@@ -34,7 +34,7 @@
 	#define RNG_BETA     1 /**< Beta.     */
 	#define RNG_GAMMA    2 /**< Gamma.    */
 	#define RNG_GAUSSIAN 3 /**< Gaussian. */
-	#define RNG_UNIFORM  4 /**< Uniform.  */
+	#define RNG_POISSON  4 /**< Poisson.  */
 	/**@}*/
 
 	
@@ -42,7 +42,7 @@
 	extern double *beta(int, double);
 	extern double *gamma(int, double);
 	extern double *gaussian(int, double);
-	extern double *uniform(int, double);
+	extern double *poisson(int, double);
 	extern int *isrng(int, long *, int);
 
 #endif /* _COMMON_H_ */

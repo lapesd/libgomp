@@ -17,50 +17,72 @@
  * MA 02110-1301, USA.
  */
 
+#include <assert.h>
 #include <omp.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include <profile.h>
 #include <util.h>
+
+#include <benchmark.h>
 
 #if defined(_SCHEDULE_SRR_)
 extern void omp_set_workload(unsigned *, unsigned);
 #endif
 
+/*============================================================================*
+ *                                  Kernels                                   *
+ *============================================================================*/
+
 /**
  * @brief Constant kernel.
+ * 
+ * @param n    Number of operations.
+ * @param load Load of an operation.
+ * 
+ * @returns A dummy result.
  */
 static long kernel_constant(unsigned n, long load)
 {
 	long sum = 0;
  
-	((void)n);
-
-	for (long i = 0; i < load; i++)
-		sum += i;
+	for (unsigned i = 0; i < n; i++)
+	{
+		for (long j = 0; j < load; j++)
+			sum += i + j;
+	}
 
 	return (sum);
 }
 
 /**
  * @brief Linear kernel.
+ * 
+ * @param n    Number of operations.
+ * @param load Load of an operation.
+ * 
+ * @returns A dummy result.
  */
-long kernel_linear(unsigned n, long load)
+static long kernel_linear(unsigned n, long load)
 {
 	long sum = 0;
 	
 	for (unsigned i = 0; i < n; i++)
-		sum += kernel_constant(n, load) + i;
+		sum += kernel_constant(1, load) + i;
 	
 	return (sum);
 }
 
 /**
  * @brief Logarithmic kernel.
+ * 
+ * @param n    Number of operations.
+ * @param load Load of an operation.
+ * 
+ * @returns A dummy result.
  */
 static long kernel_logarithmic(unsigned n, long load)
 {
@@ -74,6 +96,11 @@ static long kernel_logarithmic(unsigned n, long load)
 
 /**
  * @brief Quadratic kernel.
+ * 
+ * @param n    Number of operations.
+ * @param load Load of an operation.
+ * 
+ * @returns A dummy result.
  */
 static long kernel_quadratic(unsigned n, long load)
 {
@@ -87,6 +114,11 @@ static long kernel_quadratic(unsigned n, long load)
 
 /**
  * @brief Cubic kernel.
+ * 
+ * @param n    Number of operations.
+ * @param load Load of an operation.
+ * 
+ * @returns A dummy result.
  */
 static long kernel_cubic(unsigned n, long load)
 {
@@ -104,53 +136,69 @@ static long kernel_cubic(unsigned n, long load)
 static long (*kernels[NR_KERNELS + 1])(unsigned, long) = {
 	kernel_constant,    /* Constant kernel O(1).          */
 	kernel_linear,      /* Linear kernel O(n).            */
-	kernel logarithmic, /* Logarithmic kernel O(n log n). */
+	kernel_logarithmic, /* Logarithmic kernel O(n log n). */
 	kernel_quadratic,   /* Quadratic kernel O(n^2).       */
 	kernel_cubic        /* Cubic kernel O(n^3).           */
 };
 
+/*============================================================================*
+ *                                 Benchmark                                  *
+ *============================================================================*/
+
 /**
- * @brief Synthetic benchmark. 
+ * @brief Synthetic benchmark.
+ * 
+ * @param tasks    Tasks.
+ * @param ntasks   Number of tasks.
+ * @param nthreads Number of threads.
+ * @param ktype    Benchmark kernel type.
+ * @param load     Load for constant kernel.
  */
 void benchmark(
 	const unsigned *tasks,
 	unsigned ntasks,
-	unsigned nthreads,
+	int nthreads,
 	int ktype,
-	unsigned load)
+	long load)
 {
-	unsigned loads[nthreads];
-	long (*kernel)(unsigned, long);
+	unsigned loads[nthreads];       /* Workload assigned to threads. */
+	long (*kernel)(unsigned, long); /* Benchmark kernel.             */
 
 	/* Sanity check. */
+	assert(tasks != NULL);
+	assert(nthreads > 0);
 	assert((ktype > 0) && (ktype < NR_KERNELS));
+	assert(load > 0);
 
 	kernel = kernels[ktype];
+
+	memset(loads, 0, nthreads*sizeof(unsigned));
 	
+	/* Predict workload. */
 #if defined(_SCHEDULE_SRR_)
 	unsigned *_tasks;
 	_tasks = smalloc(ntasks*sizeof(unsigned));
 	memcpy(_tasks, tasks, ntasks*sizeof(unsigned));
 #endif
-
-	memset(loads, 0, nthreads*sizeof(unsigned));
 	
 	profile_start();
 
 	/* Sort Each bucket. */
 #if defined(_SCHEDULE_STATIC_)
-	#pragma omp parallel for schedule(static)
+	#pragma omp parallel for schedule(static) num_threads(nthreads)
 #elif defined(_SCHEDULE_GUIDED_)
-	#pragma omp parallel for schedule(guided)
+	#pragma omp parallel for schedule(guided) num_threads(nthreads)
 #elif defined(_SCHEDULE_DYNAMIC_)
-	#pragma omp parallel for schedule(dynamic)
+	#pragma omp parallel for schedule(dynamic) num_threads(nthreads)
 #elif defined(_SCHEDULE_SRR_)
 	omp_set_workload(_tasks, ntasks);
-	#pragma omp parallel for schedule(runtime)
+	#pragma omp parallel for schedule(runtime) num_threads(nthreads)
 #endif
 	for (unsigned i = 0; i < ntasks; i++)
 	{
 		int tid = omp_get_thread_num();
+
+		loads[tid] += tasks[i];
 		
 		kernel(tasks[i], load);
 	}
@@ -159,7 +207,7 @@ void benchmark(
 	profile_dump();
 	
 	/* Print statistics. */
-	for (unsigned i = 0; i < nthreads; i++)
+	for (int i = 0; i < nthreads; i++)
 		fprintf(stderr, "thread %d: %u\n", i, loads[i]);
 		
 	/* House  keeping. */

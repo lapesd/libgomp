@@ -84,14 +84,14 @@ static const char *kernelnames[NR_KERNELS] = {
  */
 static struct
 {
-	unsigned nthreads;     /**< Number of threads.                     */
-	unsigned niterations;  /**< Number of tasks.                       */
-	unsigned chunksize;    /**< Chunk size for the dynamic scheduling. */
-	unsigned load;         /**< Kernel load.                           */
-	unsigned pdfid;        /**< Probability density function.          */
-	int kernel;            /**< Kernel type.                           */
-	double skewness;       /**< Probability density function skewness. */
-	int sort;              /**< Sorting order.                         */
+	unsigned nthreads;  /**< Number of threads.                     */
+	unsigned ntasks;    /**< Number of tasks.                       */
+	unsigned chunksize; /**< Chunk size for the dynamic scheduling. */
+	unsigned load;      /**< Kernel load.                           */
+	unsigned pdfid;     /**< Probability density function.          */
+	int kernel;         /**< Kernel type.                           */
+	double skewness;    /**< Probability density function skewness. */
+	int sort;           /**< Sorting order.                         */
 } args = { 0, 0, 0, 0, 0, 0, 0.0, 0 };
 
 /**
@@ -113,13 +113,13 @@ static void usage(void)
 	printf("  --load <num>          kernel load\n");
 	printf("  --nthreads <num>      Number of threads\n");
 	printf("  --niterations <num>   Number of loop iterations\n");
-	printf("  --pdf <name>          Probability desity function for random numbers.\n");
+	printf("  --pdf <name>          Probability density function for random numbers.\n");
 	printf("        beta              a = 0.5 and b = 0.5\n");
 	printf("        gamma             a = 1.0 and b = 2.0 \n");
 	printf("        gaussian          x = 0.0 and std = 1.0\n");
 	printf("        poisson                                \n");
 	printf("  --skewness <num>      Skewness for probability density function\n");
-	printf("  --sort <type>         Task sorting\n");
+	printf("  --sort <type>         Loop sorting\n");
 	printf("         ascending      Ascending order\n");
 	printf("         descending     Descending order\n");
 	printf("         random         Random order\n");
@@ -127,10 +127,109 @@ static void usage(void)
 	exit(EXIT_SUCCESS);
 }
 
+/*============================================================================*
+ *                                Get Routines                                *
+ *============================================================================*/
+
+/**
+ * @brief Gets tasks sorting type.
+ * 
+ * @param sortname Tasks sorting name.
+ * 
+ * @param Tasks sorting type.
+ */
+static int getsort(const char *sortname)
+{
+	if (!strcmp(sortname, "ascending"))
+		return (SORT_ASCENDING);
+	else if (!strcmp(sortname, "descending"))
+		return (SORT_DESCENDING);
+	else if (!strcmp(sortname, "random"))
+		return (SORT_RANDOM);
+	
+	error("unsupported tasks sorting type");
+	
+	/* Never gets here. */
+	return (-1);
+}
+
+/**
+ * @brief Gets PDF id.
+ * 
+ * @param pdfname PDF name.
+ * 
+ * @returns PDF id.
+ */
+static int getpdf(const char *pdfname)
+{
+	for (int i = 0; i < NR_PDFS; i++)
+	{
+		if (!strcmp(pdfname, pdfnames[i]))
+			return (i + 1);
+	}
+	
+	error("unsupported probability density function");
+	
+	/* Never gets here. */
+	return (-1);
+}
+
+/**
+ * @brief Gets kernel type.
+ * 
+ * @param kernelname Kernel name.
+ * 
+ * @returns Kernel type.
+ */
+static int getkernel(const char *kernelname)
+{
+	for (int i = 0; i < NR_KERNELS; i++)
+	{
+		if (!strcmp(kernelname, kernelnames[i]))
+			return (i + 1);
+	}
+	
+	error("unsupported kernel type");
+	
+	/* Never gets here. */
+	return (-1);
+}
+
+/*============================================================================*
+ *                             Argument Checking                              *
+ *============================================================================*/
+
+/**
+ * @brief Checks program arguments.
+ */
+static void chkargs(const char *sortname, const char *pdfname, const char *kernelname)
+{
+	/* Check arguments. */
+	if (args.nthreads == 0)
+		error("invalid number of threads");
+	else if (args.ntasks == 0)
+		error("invalid number of loop iterations");
+	else if (args.skewness == 0.0)
+		error("invalid skewness for probability density function");
+	else if (args.load == 0)
+		error("invalid kernel load");
+	else if (sortname == NULL)
+		error("invalid tasks sorting type");
+	else if (pdfname == NULL)
+		error("invalid probability density function");
+	else if (kernelname == NULL)
+		error("invalid kernel type");
+}
+
+/*============================================================================*
+ *                              Argument Reading                              *
+ *============================================================================*/
+
 /**
  * @brief Reads command line arguments.
  * 
- * @details Reads command line arguments.
+ * @param argc Argument count.
+ * @param argv Argument list.
  */
 static void readargs(int argc, const char **argv)
 {
@@ -142,7 +241,7 @@ static void readargs(int argc, const char **argv)
 	for (int i = 1; i < argc; i++)
 	{
 		if (!strcmp(argv[i], "--niterations"))
-			args.niterations = atoi(argv[i + 1]);
+			args.ntasks = atoi(argv[i + 1]);
 		else if (!strcmp(argv[i], "--kernel"))
 			kernelname = argv[i + 1];
 		else if (!strcmp(argv[i], "--load"))
@@ -160,93 +259,53 @@ static void readargs(int argc, const char **argv)
 	}
 	
 	/* Check arguments. */
-	if (args.nthreads == 0)
-		error("invalid number of threads");
-	else if (args.niterations == 0)
-		error("invalid number of loop iterations");
-	else if (args.skewness == 0.0)
-		error("invalid skewness for probability density function");
-	else if (args.load == 0)
-		error("invalid kernel load");
-	else if (sortname != NULL)
-	{
-		if (!strcmp(sortname, "ascending"))
-			args.sort = SORT_ASCENDING;
-		else if (!strcmp(sortname, "descending"))
-			args.sort = SORT_DESCENDING;
-		else if (!strcmp(sortname, "random"))
-			args.sort = SORT_RANDOM;
-		else
-			error("unsupported sorting order");
-	}
-	if (pdfname != NULL)
-	{
-		for (int i = 0; i < NR_PDFS; i++)
-		{
-			if (!strcmp(pdfname, pdfnames[i]))
-			{
-				args.pdfid = i + 1;
-				goto out1;
-			}
-		}
-	}
-	error("unsupported probability density function"); 
+	chkargs(sortname, pdfname, kernelname);
 	
-out1:
-	if (kernelname)
-	{
-		for (int i = 0; i < NR_KERNELS; i++)
-		{
-			if (!strcmp(kernelname, kernelnames[i]))
-			{
-				args.kernel = i + 1;
-				goto out;
-			}
-		}
-	}
-	error("unsupported kernel type");
-
-out:
-	return;
+	/* Get secondary argument parameters. */
+	args.sort = getsort(sortname);
+	args.pdfid = getpdf(pdfname);
+	args.kernel = getkernel(kernelname);
 }
 
 /**
- * @brief Builds workload histogram.
+ * @brief Builds tasks histogram.
  * 
  * @param pdf         Probability density functions.
- * @param niterations Number of iterations in the workload.
- * @param skewness    Skew ness for probability density function.
+ * @param ntasks Number of tasks.
+ * @param skewness    Skewness for probability density function.
  * 
- * @returns Workload histogram.
+ * @returns tasks histogram.
  */
-static double *histogram_create(unsigned pdf, unsigned niterations, double skewness)
+static double *histogram_create(unsigned pdf, unsigned ntasks, double skewness)
 {
-	double *h;
+	double *h = NULL;
 	
 	/* Generate input data. */
 	switch (pdf)
 	{
 		/* Beta distribution. */
 		case RNG_BETA:
-			h = beta(niterations, skewness);
+			h = beta(ntasks, skewness);
 			break;
 			
 		/* Gamma distribution. */
 		case RNG_GAMMA:
-			h = gamma(niterations, skewness);
+			h = gamma(ntasks, skewness);
 			break;
 			
 		/* Gaussian distribution. */
 		case RNG_GAUSSIAN:
-			h = gaussian(niterations, skewness);
+			h = gaussian(ntasks, skewness);
 			break;
-			
-		/* Fall trough. */
-		default:
 			
 		/* Poisson distribution. */
 		case RNG_POISSON:
-			h = poisson(niterations, skewness);
+			h = poisson(ntasks, skewness);
+			break;
+			
+		/* Shouldn't happen. */
+		default:
+			error("unsupported probability density function");
 			break;
 	}
 	
@@ -261,7 +320,7 @@ static double *histogram_create(unsigned pdf, unsigned niterations, double skewn
  * 
  * @returns One if @p a1 is greater than @p a2 and minus one otherwise.
  */
-static int greater(void *a1, void *a2)
+static int greater(const void *a1, const void *a2)
 {
 	return ((*((unsigned *)a1) > *((unsigned *)a2)) ? 1 : -1);
 }
@@ -274,7 +333,7 @@ static int greater(void *a1, void *a2)
  * 
  * @returns One if @p a1 is less than @p a2 and minus one otherwise.
  */
-static int greater(void *a1, void *a2)
+static int less(const void *a1, const void *a2)
 {
 	return ((*((unsigned *)a1) < *((unsigned *)a2)) ? 1 : -1);
 }
@@ -329,12 +388,12 @@ static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
 /**
  * @brief Create tasks.
  * 
- * @param h Workload histogram.
+ * @param h tasks histogram.
  * @param ntasks Number of tasks.
  * 
  * @returns Tasks.
  */
-static unsigned *tasks_create(double *h, unsigned ntasks)
+static unsigned *tasks_create(const double *h, unsigned ntasks)
 {
 	unsigned *tasks;
 	const unsigned FACTOR = 100000000;
@@ -362,19 +421,19 @@ static unsigned *tasks_create(double *h, unsigned ntasks)
  */
 int main(int argc, const const char **argv)
 {
-	double *h;       /* Data workload histogram. */
-	unsigned *tasks; /* Workload tasks.          */
+	double *h;       /* Data tasks histogram. */
+	unsigned *tasks; /* tasks tasks.          */
 	
 	readargs(argc, argv);
 	
-	/* Build synthetic workload */
-	h = histogram_create(args.pdfid, args.niterations, args.skewness);
-	tasks = tasks_create(h, args.niterations);
-	tasks_sort(tasks, args.niterations, args.sort);
+	/* Build synthetic tasks */
+	h = histogram_create(args.pdfid, args.ntasks, args.skewness);
+	tasks = tasks_create(h, args.ntasks);
+	tasks_sort(tasks, args.ntasks, args.sort);
 
 	/* Run synthetic benchmark. */
 	for (int i = 0; i < NITERATIONS; i++)
-		benchmark(tasks, args.niterations, args.nthreads, args.kernel, args.load);
+		benchmark(tasks, args.ntasks, args.nthreads, args.kernel, args.load);
 		
 	/* House keeping. */
 	free(h);;
