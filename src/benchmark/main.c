@@ -352,6 +352,10 @@ static unsigned *tasks_create(double *h, unsigned niterations, int kernel)
 		
 		x = h[i]*FACTOR;
 		
+		/* Check for corner cases. */
+		if (x < 0)
+			error("bad multiplying factor");
+		
 		switch (kernel)
 		{
 			/* Logarithm kernel. */
