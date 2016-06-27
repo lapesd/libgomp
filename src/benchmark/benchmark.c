@@ -32,20 +32,82 @@ extern void omp_set_workload(unsigned *, unsigned);
 #endif
 
 /**
- * @brief Benchmark kernel.
+ * @brief Constant kernel.
  */
-int kernel(int n, long load)
+static long kernel_constant(unsigned n, long load)
+{
+	long sum = 0;
+ 
+	((void)n);
+
+	for (long i = 0; i < load; i++)
+		sum += i;
+
+	return (sum);
+}
+
+/**
+ * @brief Linear kernel.
+ */
+long kernel_linear(unsigned n, long load)
 {
 	long sum = 0;
 	
-	for (int i = 0; i < n; i++)
-	{
-		for (long j = 0; j < load; j++)
-			sum += i+j;
-	}
+	for (unsigned i = 0; i < n; i++)
+		sum += kernel_constant(n, load) + i;
 	
 	return (sum);
 }
+
+/**
+ * @brief Logarithmic kernel.
+ */
+static long kernel_logarithmic(unsigned n, long load)
+{
+	long sum = 0;
+
+	for (unsigned i = 1; i < n; i *= 2)
+		sum += kernel_linear(n, load) + i;
+
+	return (sum);
+}
+
+/**
+ * @brief Quadratic kernel.
+ */
+static long kernel_quadratic(unsigned n, long load)
+{
+	long sum = 0;
+
+	for (unsigned i = 0; i < n; i++)
+		sum += kernel_linear(n, load) + i;
+
+	return (sum);
+}
+
+/**
+ * @brief Cubic kernel.
+ */
+static long kernel_cubic(unsigned n, long load)
+{
+	long sum = 0;
+
+	for (unsigned i = 0; i < n; i++)
+		sum += kernel_quadratic(n, load) + i;
+
+	return (sum);
+}
+
+/**
+ * @brief Kernels table.
+ */
+static long (*kernels[NR_KERNELS + 1])(unsigned, long) = {
+	kernel_constant,    /* Constant kernel O(1).          */
+	kernel_linear,      /* Linear kernel O(n).            */
+	kernel logarithmic, /* Logarithmic kernel O(n log n). */
+	kernel_quadratic,   /* Quadratic kernel O(n^2).       */
+	kernel_cubic        /* Cubic kernel O(n^3).           */
+};
 
 /**
  * @brief Synthetic benchmark. 
@@ -54,9 +116,16 @@ void benchmark(
 	const unsigned *tasks,
 	unsigned ntasks,
 	unsigned nthreads,
+	int ktype,
 	unsigned load)
 {
 	unsigned loads[nthreads];
+	long (*kernel)(unsigned, long);
+
+	/* Sanity check. */
+	assert((ktype > 0) && (ktype < NR_KERNELS));
+
+	kernel = kernels[ktype];
 	
 #if defined(_SCHEDULE_SRR_)
 	unsigned *_tasks;
@@ -83,8 +152,6 @@ void benchmark(
 	{
 		int tid = omp_get_thread_num();
 		
-		for (long j = 0; j < load; j++)
-			loads[tid] += tasks[i];
 		kernel(tasks[i], load);
 	}
 	

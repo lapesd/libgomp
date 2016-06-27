@@ -25,6 +25,21 @@
 	 */
 	#define NITERATIONS 10
 
+	/**
+	 * @brief Number of supported kernels.
+	 */
+	#define NR_KERNELS 4
+
+	/**
+	 * @brief Name of supported kernel types.
+	 */
+	/**@{*/
+	#define KERNEL_LINEAR    1
+	#define KERNEL_LOGARITHM 2
+	#define KERNEL_QUADRATIC 3
+	#define KERNEL_CUBIC     4
+	/**@}*/
+
 	/* Forward definitions. */
 	extern void benchmark(const unsigned *, unsigned, unsigned, unsigned);
 

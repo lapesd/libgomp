@@ -60,21 +60,6 @@
 #define SORT_RANDOM     3 /**< Random sort.     */
 
 /**
- * @brief Number of supported kernels.
- */
-#define NR_KERNELS 4
-
-/**
- * @brief Name of supported kernel types.
- */
-/**@{*/
-#define KERNEL_LINEAR    1
-#define KERNEL_LOGARITHM 2
-#define KERNEL_QUADRATIC 3
-#define KERNEL_CUBIC     4
-/**@}*/
-
-/**
  * @brief Name of supported probability density functions.
  */
 static const char *pdfnames[NR_PDFS] = {
@@ -104,7 +89,7 @@ static struct
 	unsigned chunksize;    /**< Chunk size for the dynamic scheduling. */
 	unsigned load;         /**< Kernel load.                           */
 	unsigned pdfid;        /**< Probability density function.          */
-	int kernelid;          /**< Kernel type.                           */
+	int kernel;            /**< Kernel type.                           */
 	double skewness;       /**< Probability density function skewness. */
 	int sort;              /**< Sorting order.                         */
 } args = { 0, 0, 0, 0, 0, 0, 0.0, 0 };
@@ -214,7 +199,7 @@ out1:
 		{
 			if (!strcmp(kernelname, kernelnames[i]))
 			{
-				args.kernelid = i + 1;
+				args.kernel = i + 1;
 				goto out;
 			}
 		}
@@ -344,19 +329,19 @@ static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
 /**
  * @brief Create tasks.
  * 
- * @brief h Workload histogram.
- * @param kernel Kernel type.
+ * @param h Workload histogram.
+ * @param ntasks Number of tasks.
  * 
  * @returns Tasks.
  */
-static unsigned *tasks_create(double *h, unsigned niterations, int kernel)
+static unsigned *tasks_create(double *h, unsigned ntasks)
 {
 	unsigned *tasks;
-	const int FACTOR = 100000000;
+	const unsigned FACTOR = 100000000;
 	
-	tasks = smalloc(niterations*sizeof(unsigned));
+	tasks = smalloc(ntasks*sizeof(unsigned));
 	
-	for (unsigned i = 0; i < niterations; i++)
+	for (unsigned i = 0; i < ntasks; i++)
 	{
 		double x;
 		
@@ -366,28 +351,6 @@ static unsigned *tasks_create(double *h, unsigned niterations, int kernel)
 		if (x < 0)
 			error("bad multiplying factor");
 		
-		switch (kernel)
-		{
-			/* Logarithm kernel. */
-			case KERNEL_LOGARITHM:
-				x = x*(log(x)/log(2));
-				break;
-				
-			/* Quadratic kernel. */
-			case KERNEL_QUADRATIC:
-				x = pow(x, 2);
-				break;
-				
-			/* Cubic kernel. */
-			case KERNEL_CUBIC:
-				x = pow(x, 3);
-				break;
-				
-			/* Linear kernel. */
-			case KERNEL_LINEAR:
-			default:
-				break;
-		}
 		tasks[i] = ceil(x);
 	}
 	
@@ -406,12 +369,12 @@ int main(int argc, const const char **argv)
 	
 	/* Build synthetic workload */
 	h = histogram_create(args.pdfid, args.niterations, args.skewness);
-	tasks = tasks_create(h, args.niterations, args.kernelid);
+	tasks = tasks_create(h, args.niterations);
 	tasks_sort(tasks, args.niterations, args.sort);
 
 	/* Run synthetic benchmark. */
 	for (int i = 0; i < NITERATIONS; i++)
-		benchmark(tasks, args.niterations, args.nthreads, args.load);
+		benchmark(tasks, args.niterations, args.nthreads, args.kernel, args.load);
 		
 	/* House keeping. */
 	free(h);;
