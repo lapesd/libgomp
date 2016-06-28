@@ -44,15 +44,15 @@ double *poisson(int nclasses, double skewness)
 
 	/* Build histogram. */
 	freq = 0.5;
-	for (int i = (5*nclasses)/8 - 1; i >= 0 ; i--)
+	for (int i = (3*nclasses)/8 - 1; i >= 0; i--)
 	{
-		freq *= skewness;
+		freq *= 0.45;
 		histogram[i] = freq;
 	}
 	freq = 0.5;
-	for (int i = (5*nclasses)/8; i < nclasses ; i++)
+	for (int i = (3*nclasses)/8; i < nclasses ; i++)
 	{
-		freq *= 0.45;
+		freq *= skewness;
 		histogram[i] = freq;
 	}
 	
