@@ -32,6 +32,7 @@
  */
 double *gaussian(int nclasses, double skewness)
 {
+	double sum;        /* PDF sum.         */
 	double freq;       /* Class frequency. */
 	double *histogram; /* Histogram.       */
 	
@@ -43,14 +44,20 @@ double *gaussian(int nclasses, double skewness)
 	histogram = smalloc(nclasses*sizeof(double));
 
 	/* Build histogram. */
-	freq = 0.5;
+	freq = 0.5; sum = 0.0;
 	for (int i = 0; i < nclasses/2; i++)
 	{
 		freq *= skewness;
 		
 		histogram[nclasses/2 - i - 1] = freq;
 		histogram[nclasses/2 + i] = freq;
+		
+		sum += freq + freq;
 	}
+	
+	/* Normalize. */
+	for (int i = 0; i < nclasses; i++)
+		histogram[i] /= sum;
 	
 	return (histogram);
 }

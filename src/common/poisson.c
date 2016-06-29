@@ -32,6 +32,7 @@
  */
 double *poisson(int nclasses, double skewness)
 {
+	double sum;        /* PDF sum.         */
 	double freq;       /* Class frequency. */
 	double *histogram; /* Histogram.       */
 	
@@ -43,18 +44,26 @@ double *poisson(int nclasses, double skewness)
 	histogram = smalloc(nclasses*sizeof(double));
 
 	/* Build histogram. */
-	freq = 0.5;
+	freq = 0.5; sum = 0.0;
 	for (int i = (3*nclasses)/8 - 1; i >= 0; i--)
 	{
 		freq *= 0.45;
 		histogram[i] = freq;
+		
+		sum += freq;
 	}
 	freq = 0.5;
 	for (int i = (3*nclasses)/8; i < nclasses ; i++)
 	{
 		freq *= skewness;
 		histogram[i] = freq;
+		
+		sum += freq;
 	}
+	
+	/* Normalize. */
+	for (int i = 0; i < nclasses; i++)
+		histogram[i] /= sum;
 	
 	return (histogram);
 }

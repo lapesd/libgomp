@@ -32,6 +32,7 @@
  */
 double *beta(int nclasses, double skewness)
 {
+	double sum;        /* PDF sum.         */
 	double freq;       /* Class frequency. */
 	double *histogram; /* Histogram.       */
 	
@@ -43,7 +44,7 @@ double *beta(int nclasses, double skewness)
 	histogram = smalloc(nclasses*sizeof(double));
 
 	/* Build histogram. */
-	freq = 0.5;
+	freq = 0.5; sum = 0.0;
 	for (int i = 0; i < nclasses/2; i++)
 	{
 		if (i < (2*nclasses)/16)
@@ -55,7 +56,13 @@ double *beta(int nclasses, double skewness)
 		
 		histogram[i] = freq;
 		histogram[nclasses - i - 1] = freq;
+		
+		sum += freq + freq;
 	}
+	
+	/* Normalize. */
+	for (int i = 0; i < nclasses; i++)
+		histogram[i] /= sum;
 	
 	return (histogram);
 }

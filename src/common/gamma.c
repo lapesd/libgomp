@@ -32,6 +32,7 @@
  */
 double *gamma(int nclasses, double skewness)
 {
+	double sum;        /* PDF sum.         */
 	double freq;       /* Class frequency. */
 	double *histogram; /* Histogram.       */
 	
@@ -43,13 +44,19 @@ double *gamma(int nclasses, double skewness)
 	histogram = smalloc(nclasses*sizeof(double));
 
 	/* Build histogram. */
-	freq = 1.0;
+	freq = 1.0; sum = 0.0;
 	for (int i = 0; i < nclasses; i++)
 	{
 		freq *= skewness;
 		
 		histogram[i] = freq;
+		
+		sum += freq;
 	}
+	
+	/* Normalize. */
+	for (int i = 0; i < nclasses; i++)
+		histogram[i] /= sum;
 	
 	return (histogram);
 }
