@@ -429,11 +429,13 @@ int main(int argc, const const char **argv)
 	/* Build synthetic tasks */
 	h = histogram_create(args.pdfid, args.ntasks, args.skewness);
 	tasks = tasks_create(h, args.ntasks);
-	tasks_sort(tasks, args.ntasks, args.sort);
 
 	/* Run synthetic benchmark. */
 	for (int i = 0; i < NITERATIONS; i++)
+	{
+		tasks_sort(tasks, args.ntasks, args.sort);
 		benchmark(tasks, args.ntasks, args.nthreads, args.kernel, args.load);
+	}
 		
 	/* House keeping. */
 	free(h);;
