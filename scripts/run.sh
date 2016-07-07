@@ -26,6 +26,7 @@
 # Directories.
 BINDIR=$PWD/bin
 CSVDIR=$PWD/csv
+INDIR=$PWD/input
 LIBDIR=$PWD/src/libgomp/libgomp/build/.libs
 
 # Load adjust accordingly.
@@ -34,20 +35,20 @@ LOAD=4000000000
 # Number of iterations.
 NITERATIONS=$3
 
-# Kernel type.
-KERNEL_TYPE=linear
-
 # Scheduling strategies.
 STRATEGIES=(static dynamic srr)
 
 # Workloads.
 WORKLOAD=(gamma gaussian)
 
+# Kernels
+KERNELS=(linear logarithm quadratic)
+
 # Workload sorting.
-SORT=(ascending)
+SORT=random
 
 # Skewness
-SKEWNESS=(0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90)
+SKEWNESS=(0.750 0.775 0.800 0.825 0.850 0.875 0.900)
 
 #===============================================================================
 #                              UTILITY ROUTINES
@@ -97,14 +98,16 @@ function extract_variables
 
 #
 # Parses the benchmark.
-#  $1 Scheduling strategy.
-#  $2 Number of threads.
-#  $3 Workload.
-#  $4 Skewness.
+#  $1 Probability density function.
+#  $2 Skewness.
+#  $3 Kernel type.
+#  $4 Number of iterations.
+#  $5 Scheduling strategy.
+#  $6 Number of threads.
 #
 function parse_benchmark
 {
-	extract_variables benchmark-$3-$4-$NITERATIONS-$1-$2
+	extract_variables benchmark-$1-$2-$3-$4-$5-$6
 }
 
 #===============================================================================
@@ -113,23 +116,23 @@ function parse_benchmark
 
 #
 # Run synthetic benchmark.
-#  $1 Scheduling strategy.
-#  $2 Number of threads.
-#  $3 Workload.
-#  $4 Skewness
+#  $1 Probability density function.
+#  $2 Skewness.
+#  $3 Kernel type.
+#  $4 Number of iterations.
+#  $5 Scheduling strategy.
+#  $6 Number of threads.
 #
 function run_benchmark
 {
-	echo "  Benchmark with $2 thread(s)"
-	$BINDIR/benchmark.$1 \
-		--kernel $KERNEL_TYPE      \
-		--load $LOAD               \
-		--nthreads $2              \
-		--niterations $NITERATIONS \
-		--pdf $3                   \
-		--skewness $4              \
-		--sort ascending           \
-	2>> benchmark-$3-$4-$NITERATIONS-$1-$2.tmp
+	echo "  Benchmark with $6 thread(s)"
+	$BINDIR/benchmark.$5                 \
+		--input $INDIR/$1-$4-$2-$3.csv   \
+		--load $LOAD                     \
+		--nthreads $6                    \
+		--niterations $4                 \
+		--sort $SORT                     \
+	2>> benchmark-$1-$2-$3-$4-$5-$6.tmp
 }
 
 #===============================================================================
@@ -140,16 +143,22 @@ mkdir -p $CSVDIR
 
 map_threads $1 $2
 
-for strategy in "${STRATEGIES[@]}"; do
-	for skewness in "${SKEWNESS[@]}"; do
-		for workload in "${WORKLOAD[@]}"; do
-			echo "== Running $strategy $skewness $workload"
-			export LD_LIBRARY_PATH=$LIBDIR
-			export OMP_SCHEDULE="$strategy"
-			export OMP_NUM_THREADS=$1
-			run_benchmark $strategy $1 $workload $skewness
-			parse_benchmark $strategy $1 $workload $skewness
-			rm -f *.tmp
+for strategy in "${STRATEGIES[@]}";
+do
+	for skewness in "${SKEWNESS[@]}";
+	do
+		for pdf in "${WORKLOAD[@]}";
+		do
+			for kernel in "${KERNELS[@]}";
+			do
+				echo "== Running $strategy $skewness $workload"
+				export LD_LIBRARY_PATH=$LIBDIR
+				export OMP_SCHEDULE="$strategy"
+				export OMP_NUM_THREADS=$1
+				run_benchmark $pdf $skewness $kernel $NITERATIONS $strategy $NTHREADS
+				parse_benchmark $pdf $skewness $kernel $NITERATIONS $strategy $NTHREADS
+				rm -f *.tmp
+			done
 		done
 	done
 done
