@@ -25,22 +25,7 @@
 	 */
 	#define NITERATIONS 10
 
-	/**
-	 * @brief Number of supported kernels.
-	 */
-	#define NR_KERNELS 4
-
-	/**
-	 * @brief Name of supported kernel types.
-	 */
-	/**@{*/
-	#define KERNEL_LINEAR      1 /**< Linear kernel O(n).            */
-	#define KERNEL_LOGARITHMIC 2 /**< Logarithmic kernel O(n log n). */
-	#define KERNEL_QUADRATIC   3 /**< Quadratic kernel O(n^2).       */
-	#define KERNEL_CUBIC       4 /**< Cubic kernel O(n^3).           */
-	/**@}*/
-
 	/* Forward definitions. */
-	extern void benchmark(const unsigned *, unsigned, int, int, long);
+	extern void benchmark(const unsigned *, unsigned, int, long);
 
 #endif /* BENCHMARK_H_ */

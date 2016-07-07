@@ -34,18 +34,18 @@ extern void omp_set_workload(unsigned *, unsigned);
 #endif
 
 /*============================================================================*
- *                                  Kernels                                   *
+ *                                   Kernel                                   *
  *============================================================================*/
 
 /**
- * @brief Constant kernel.
+ * @brief Kernelernel.
  * 
  * @param n    Number of operations.
  * @param load Load of an operation.
  * 
  * @returns A dummy result.
  */
-static long kernel_constant(unsigned n, long load)
+static long kernel(unsigned n, long load)
 {
 	long sum = 0;
  
@@ -58,89 +58,6 @@ static long kernel_constant(unsigned n, long load)
 	return (sum);
 }
 
-/**
- * @brief Linear kernel.
- * 
- * @param n    Number of operations.
- * @param load Load of an operation.
- * 
- * @returns A dummy result.
- */
-static long kernel_linear(unsigned n, long load)
-{
-	long sum = 0;
-	
-	for (unsigned i = 0; i < n; i++)
-		sum += kernel_constant(1, load) + i;
-	
-	return (sum);
-}
-
-/**
- * @brief Logarithmic kernel.
- * 
- * @param n    Number of operations.
- * @param load Load of an operation.
- * 
- * @returns A dummy result.
- */
-static long kernel_logarithmic(unsigned n, long load)
-{
-	long sum = 0;
-
-	for (unsigned i = 1; i < n; i *= 2)
-		sum += kernel_linear(n, load) + i;
-
-	return (sum);
-}
-
-/**
- * @brief Quadratic kernel.
- * 
- * @param n    Number of operations.
- * @param load Load of an operation.
- * 
- * @returns A dummy result.
- */
-static long kernel_quadratic(unsigned n, long load)
-{
-	long sum = 0;
-
-	for (unsigned i = 0; i < n; i++)
-		sum += kernel_linear(n, load) + i;
-
-	return (sum);
-}
-
-/**
- * @brief Cubic kernel.
- * 
- * @param n    Number of operations.
- * @param load Load of an operation.
- * 
- * @returns A dummy result.
- */
-static long kernel_cubic(unsigned n, long load)
-{
-	long sum = 0;
-
-	for (unsigned i = 0; i < n; i++)
-		sum += kernel_quadratic(n, load) + i;
-
-	return (sum);
-}
-
-/**
- * @brief Kernels table.
- */
-static long (*kernels[NR_KERNELS + 1])(unsigned, long) = {
-	kernel_constant,    /* Constant kernel O(1).          */
-	kernel_linear,      /* Linear kernel O(n).            */
-	kernel_logarithmic, /* Logarithmic kernel O(n log n). */
-	kernel_quadratic,   /* Quadratic kernel O(n^2).       */
-	kernel_cubic        /* Cubic kernel O(n^3).           */
-};
-
 /*============================================================================*
  *                                 Benchmark                                  *
  *============================================================================*/
@@ -151,26 +68,20 @@ static long (*kernels[NR_KERNELS + 1])(unsigned, long) = {
  * @param tasks    Tasks.
  * @param ntasks   Number of tasks.
  * @param nthreads Number of threads.
- * @param ktype    Benchmark kernel type.
  * @param load     Load for constant kernel.
  */
 void benchmark(
 	const unsigned *tasks,
 	unsigned ntasks,
 	int nthreads,
-	int ktype,
 	long load)
 {
-	unsigned loads[nthreads];       /* Workload assigned to threads. */
-	long (*kernel)(unsigned, long); /* Benchmark kernel.             */
-
+	unsigned loads[nthreads];
+	
 	/* Sanity check. */
 	assert(tasks != NULL);
 	assert(nthreads > 0);
-	assert((ktype > 0) && (ktype < NR_KERNELS));
 	assert(load > 0);
-
-	kernel = kernels[ktype];
 
 	memset(loads, 0, nthreads*sizeof(unsigned));
 	
