@@ -39,7 +39,7 @@ export CFLAGS  = -I $(CONTRIBDIR)/include
 export CFLAGS += -I $(INCDIR)
 export CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200809L
 export CFLAGS += -pedantic -Wall -Wextra -Werror -fopenmp
-export CFLAGS += -O3
+export CFLAGS += -O1
 
 
 # Builds everything.
