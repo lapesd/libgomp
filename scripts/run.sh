@@ -30,7 +30,10 @@ INDIR=$PWD/input
 LIBDIR=$PWD/src/libgomp/libgomp/build/.libs
 
 # Load adjust accordingly.
-LOAD=4000000000
+LOAD=4000000000000000000
+
+# Number of threads.
+NTHREADS=$1
 
 # Number of iterations.
 NITERATIONS=$3
@@ -131,8 +134,8 @@ function run_benchmark
 		--load $LOAD                     \
 		--nthreads $6                    \
 		--niterations $4                 \
-		--sort $SORT                     \
-	2>> benchmark-$1-$2-$3-$4-$5-$6.tmp
+		--sort $SORT                     
+#	2>> benchmark-$1-$2-$3-$4-$5-$6.tmp
 }
 
 #===============================================================================
@@ -156,8 +159,8 @@ do
 				export OMP_SCHEDULE="$strategy"
 				export OMP_NUM_THREADS=$1
 				run_benchmark $pdf $skewness $kernel $NITERATIONS $strategy $NTHREADS
-				parse_benchmark $pdf $skewness $kernel $NITERATIONS $strategy $NTHREADS
-				rm -f *.tmp
+#				parse_benchmark $pdf $skewness $kernel $NITERATIONS $strategy $NTHREADS
+#				rm -f *.tmp
 			done
 		done
 	done

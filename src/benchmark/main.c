@@ -142,7 +142,7 @@ static void readargs(int argc, const char **argv)
 		if (!strcmp(argv[i], "--niterations"))
 			args.ntasks = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "--load"))
-			args.load = atof(argv[++i]);
+			args.load = atol(argv[++i]);
 		else if (!strcmp(argv[i], "--nthreads"))
 			args.nthreads = atof(argv[++i]);
 		else if (!strcmp(argv[i], "--help"))
