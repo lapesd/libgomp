@@ -76,6 +76,7 @@ void benchmark(
 	int nthreads,
 	long load)
 {
+	long sum = 0;
 	unsigned loads[nthreads];
 	
 	/* Sanity check. */
@@ -96,14 +97,14 @@ void benchmark(
 
 	/* Sort Each bucket. */
 #if defined(_SCHEDULE_STATIC_)
-	#pragma omp parallel for schedule(static) num_threads(nthreads)
+	#pragma omp parallel for schedule(static) num_threads(nthreads) reduction(+:sum)
 #elif defined(_SCHEDULE_GUIDED_)
-	#pragma omp parallel for schedule(guided) num_threads(nthreads)
+	#pragma omp parallel for schedule(guided) num_threads(nthreads) reduction(+:sum)
 #elif defined(_SCHEDULE_DYNAMIC_)
-	#pragma omp parallel for schedule(dynamic) num_threads(nthreads)
+	#pragma omp parallel for schedule(dynamic) num_threads(nthreads) reduction(+:sum)
 #elif defined(_SCHEDULE_SRR_)
 	omp_set_workload(_tasks, ntasks);
-	#pragma omp parallel for schedule(runtime) num_threads(nthreads)
+	#pragma omp parallel for schedule(runtime) num_threads(nthreads) reduction(+:sum)
 #endif
 	for (unsigned i = 0; i < ntasks; i++)
 	{
@@ -111,7 +112,7 @@ void benchmark(
 
 		loads[tid] += tasks[i];
 		
-		kernel(tasks[i], load);
+		sum += kernel(tasks[i], load);
 	}
 	
 	profile_end();

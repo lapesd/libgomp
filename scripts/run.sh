@@ -30,7 +30,7 @@ INDIR=$PWD/input
 LIBDIR=$PWD/src/libgomp/libgomp/build/.libs
 
 # Load adjust accordingly.
-LOAD=4000000000000000000
+LOAD=1000000000
 
 # Number of threads.
 NTHREADS=$1
@@ -42,10 +42,10 @@ NITERATIONS=$3
 STRATEGIES=(static dynamic srr)
 
 # Workloads.
-WORKLOAD=(gamma gaussian)
+WORKLOAD=(gaussian)
 
 # Kernels
-KERNELS=(linear logarithm quadratic)
+KERNELS=(linear)
 
 # Workload sorting.
 SORT=random
@@ -134,8 +134,8 @@ function run_benchmark
 		--load $LOAD                     \
 		--nthreads $6                    \
 		--niterations $4                 \
-		--sort $SORT                     
-#	2>> benchmark-$1-$2-$3-$4-$5-$6.tmp
+		--sort $SORT                     \
+	2>> benchmark-$1-$2-$3-$4-$5-$6.tmp
 }
 
 #===============================================================================
