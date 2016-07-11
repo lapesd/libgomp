@@ -189,13 +189,14 @@ static int less(const void *a1, const void *a2)
 /**
  * @brief Shuffles and array.
  * 
- * @param a Target array.
- * @param n Size of target array.
+ * @param a    Target array.
+ * @param n    Size of target array.
+ * @param seed Seed for shuffling.
  */
-static void array_shuffle(unsigned *a, unsigned n)
+static void array_shuffle(unsigned *a, unsigned n, int seed)
 {
 	/* Let us be totally random. */
-	srand(time(NULL));
+	srand(seed*1000);
 	
 	/* Shuffle array. */
 	for (unsigned i = 0; i < n - 1; i++)
@@ -217,12 +218,13 @@ static void array_shuffle(unsigned *a, unsigned n)
  * @param tasks  Target tasks.
  * @param ntasks Number of tasks.
  * @param type   Sorting type.
+ * @param seed   Seed for shuffling.
  */
-static void tasks_sort(unsigned *tasks, unsigned ntasks, int type)
+static void tasks_sort(unsigned *tasks, unsigned ntasks, int type, int seed)
 {
 	/* Random sort. */
 	if (type == SORT_RANDOM)
-		array_shuffle(tasks, ntasks);
+		array_shuffle(tasks, ntasks, seed);
 
 	/* Ascending sort. */
 	else if (type == SORT_ASCENDING)
@@ -288,7 +290,7 @@ int main(int argc, const const char **argv)
 	/* Run synthetic benchmark. */
 	for (int i = 0; i < NITERATIONS; i++)
 	{
-		tasks_sort(tasks, args.ntasks, args.sort);
+		tasks_sort(tasks, args.ntasks, args.sort, i);
 		benchmark(tasks, args.ntasks, args.nthreads, args.load);
 	}
 		
