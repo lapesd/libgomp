@@ -114,7 +114,7 @@ function run_benchmark
 		--input $INDIR/$3-$NTASKS-$4-$5.csv \
 		--load $LOAD                        \
 		--nthreads $2                       \
-		--niterations $NTASKS               \
+		--ntasks $NTASKS                    \
 		--sort $SORT                        \
 	2>> benchmark-$3-$4-$6-$NTASKS-$5-$1-$2.tmp
 }

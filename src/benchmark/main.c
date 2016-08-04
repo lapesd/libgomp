@@ -49,7 +49,9 @@ static struct
 	unsigned chunksize; /**< Chunk size for the dynamic scheduling. */
 	unsigned load;      /**< Kernel load.                           */
 	int sort;           /**< Sorting order.                         */
-} args = { NULL, 0, 0, 0, 0, 0 };
+	int seed;           /**< Seed for sorting.                      */
+	int niterations;    /**< Number of iterations.                   */
+} args = { NULL, 0, 0, 0, 0, 0, 1, NITERATIONS};
 
 /**
  * @brief Prints program usage and exits.
@@ -65,7 +67,7 @@ static void usage(void)
 	printf("  --input <filename>    Input workload file\n");
 	printf("  --load <num>          kernel load\n");
 	printf("  --nthreads <num>      Number of threads\n");
-	printf("  --niterations <num>   Number of loop iterations\n");
+	printf("  --ntasks <num>        Number of loop iterations\n");
 	printf("  --sort <type>         Loop sorting\n");
 	printf("         ascending      Ascending order\n");
 	printf("         descending     Descending order\n");
@@ -139,7 +141,7 @@ static void readargs(int argc, const char **argv)
 	/* Parse command line arguments. */
 	for (int i = 1; i < argc; i++)
 	{
-		if (!strcmp(argv[i], "--niterations"))
+		if (!strcmp(argv[i], "--ntasks"))
 			args.ntasks = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "--load"))
 			args.load = atol(argv[++i]);
@@ -151,6 +153,8 @@ static void readargs(int argc, const char **argv)
 			sortname = argv[++i];
 		else if (!strcmp(argv[i], "--input"))
 			args.input = argv[++i];
+		else if (!strcmp(argv[i], "--seed"))
+			args.seed = atoi(argv[++i]);
 	}
 	
 	/* Check arguments. */
@@ -285,11 +289,11 @@ int main(int argc, const const char **argv)
 	readargs(argc, argv);
 	
 	/* Run synthetic benchmark. */
-	for (int j = 0; j < NITERATIONS; j++)
+	for (int j = 0; j < args.niterations; j++)
 	{
 		tasks = readfile(args.input, args.ntasks);
 
-		tasks_sort(tasks, args.ntasks, args.sort, 1);
+		tasks_sort(tasks, args.ntasks, args.sort, args.seed);
 		benchmark(tasks, args.ntasks, args.nthreads, args.load);
 
 		free(tasks);
