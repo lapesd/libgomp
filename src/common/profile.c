@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include <papi.h>
+#include <omp.h>
 
 #include <util.h>
 
@@ -41,12 +42,28 @@ static int events[NR_EVENTS] = {
 static long long hwcounters[NR_EVENTS];
 
 /**
+ * @brief Time.
+ */
+static double totaltime = 0.0;
+static double residual = 0.0;
+
+/**
  * @brief Start profiling.
  */
 void profile_start(void)
 {
+	double start = 0.0;
+	double end = 0.0;
+	
+	start = omp_get_wtime();
+	end = omp_get_wtime();
+	
+	residual = end - start;
+	
 	if (PAPI_start_counters(events, NR_EVENTS) != PAPI_OK)
 		error("failed to setup PAPI");
+	
+	totaltime = omp_get_wtime();
 }
 
 /**
@@ -56,7 +73,8 @@ void profile_end(void)
 {
 	if (PAPI_stop_counters(hwcounters, sizeof(events)) != PAPI_OK)
 		error("failed to read hardware counters");
-		
+	
+	totaltime = omp_get_wtime() - totaltime - residual;
 }
 
 /**
@@ -65,4 +83,5 @@ void profile_end(void)
 void profile_dump(void)
 {
 	fprintf(stderr, "Total Cycles: %lld\n", hwcounters[0]);
+	fprintf(stderr, "Total Time: %lf\n", totaltime);
 }
