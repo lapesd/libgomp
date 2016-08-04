@@ -155,6 +155,8 @@ static void readargs(int argc, const char **argv)
 			args.input = argv[++i];
 		else if (!strcmp(argv[i], "--seed"))
 			args.seed = atoi(argv[++i]);
+		else if (!strcmp(argv[i], "--niterations"))
+			args.niterations = atoi(argv[++i]);
 	}
 	
 	/* Check arguments. */
