@@ -196,7 +196,7 @@ static int less(const void *a1, const void *a2)
 static void array_shuffle(unsigned *a, unsigned n, int seed)
 {
 	/* Let us be totally random. */
-	srand(seed*1000);
+	srand(seed);
 	
 	/* Shuffle array. */
 	for (unsigned i = 0; i < n - 1; i++)
@@ -284,18 +284,16 @@ int main(int argc, const const char **argv)
 	
 	readargs(argc, argv);
 	
-	/* Build synthetic tasks */
-	tasks = readfile(args.input, args.ntasks);
-
 	/* Run synthetic benchmark. */
-	for (int i = 0; i < NITERATIONS; i++)
+	for (int j = 0; j < NITERATIONS; j++)
 	{
-		tasks_sort(tasks, args.ntasks, args.sort, i);
+		tasks = readfile(args.input, args.ntasks);
+
+		tasks_sort(tasks, args.ntasks, args.sort, 0);
 		benchmark(tasks, args.ntasks, args.nthreads, args.load);
+
+		free(tasks);
 	}
-		
-	/* House keeping. */
-	free(tasks);
 	
 	return (EXIT_SUCCESS);
 }
