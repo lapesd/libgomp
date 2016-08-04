@@ -289,7 +289,7 @@ int main(int argc, const const char **argv)
 	{
 		tasks = readfile(args.input, args.ntasks);
 
-		tasks_sort(tasks, args.ntasks, args.sort, 0);
+		tasks_sort(tasks, args.ntasks, args.sort, 1);
 		benchmark(tasks, args.ntasks, args.nthreads, args.load);
 
 		free(tasks);
