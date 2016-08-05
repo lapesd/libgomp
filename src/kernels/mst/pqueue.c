@@ -150,7 +150,7 @@ int pqueue_empty(struct pqueue *p)
 /*
  * Changes the priority of an object in a priority queue.
  */
-int pqueue_change(struct pqueue *p, int obj, int newprio)
+int pqueue_change(struct pqueue *p, int obj, double newprio)
 {
 	int i;       /* Item index.   */
 	int oldprio; /* Old priority. */
@@ -185,7 +185,7 @@ found:
 /*
  * Inserts an object in a priority queue.
  */
-void pqueue_insert(struct pqueue *p, int obj, int prio)
+void pqueue_insert(struct pqueue *p, int obj, double prio)
 {
 	int i;
 	

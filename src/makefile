@@ -17,16 +17,39 @@
 # MA 02110-1301, USA.
 #
 
+# Common C source files.
+SRC = $(wildcard $(CURDIR)/common/*.c)
+
+# Common Object files.
+OBJ = $(SRC:.c=.o)
+
+# Tweaks on toolchain.
+LIBS := $(OBJ) $(LIBS)
+
 # Phony list.
+.PHONY: benchmark
+.PHONY: generators
 .PHONY: kernels
 .PHONY: libgomp
 
 # Builds everything.
-all: kernels
+all: benchmark kernels generators
+
+# Builds benchmark.
+benchmark: $(OBJ)
+	cd benchmark && $(MAKE) all
 
 # Builds kernels.
-kernels:
+kernels: $(OBJ)
 	cd kernels && $(MAKE) all
+
+# Builds input data generators.
+generators: $(OBJ)
+	cd generators && $(MAKE) all
+	
+# Builds common objects.
+%.o: %.c
+	$(CC) $< $(CFLAGS) -c -o $@
 
 # Builds libgomp.
 libgomp:
@@ -41,4 +64,7 @@ libgomp-clean:
 	
 # Cleans everything.
 clean:
+	rm -f $(OBJ)
+	cd benchmark && $(MAKE) clean
+	cd generators && $(MAKE) clean
 	cd kernels && $(MAKE) clean

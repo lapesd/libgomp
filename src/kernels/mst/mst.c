@@ -18,25 +18,46 @@
  */
 
 #include <limits.h>
+#include <string.h>
+#include <math.h>
+#include <omp.h>
+#include <float.h>
 
-#include "util.h"
-#include "mst.h"
-#include "pqueue.h"
+#include <util.h>
+#include <profile.h>
+#include <mst.h>
+#include <pqueue.h>
 
+#if defined(_SCHEDULE_SRR_)
+extern void omp_set_workload(unsigned *, unsigned);
+#endif
 
-inline static int distance(struct point p0, struct point p1)
+/**
+ * @brief Number of regions.
+ * 
+ * @details Number of regions. Adjust this to improve data locality.
+ */
+#define NR_REGIONS 8
+
+inline static double distance(struct point p0, struct point p1)
 {
-	return ((p0.x - p1.x)*(p0.x - p1.x) + (p0.y - p1.y)*(p0.y - p1.y));
+	return (pow((p0.x - p1.x), 2) + pow((p0.y - p1.y), 2));
 }
 
-void mst(struct point *data, int n)
+/**
+ * @brief MST kernel.
+ * 
+ * @param data Data points.
+ * @param n    Number of points.
+ */
+void mst(const struct point *data, int n)
 {
 	int *from;
-	int *cost;
+	double *cost;
 	struct pqueue *frontier;
 	
 	from = smalloc(n*sizeof(int));
-	cost = smalloc(n*sizeof(int));
+	cost = smalloc(n*sizeof(double));
 		
 	frontier = pqueue_create(n);
 	
@@ -44,7 +65,7 @@ void mst(struct point *data, int n)
 	for (int i = 0; i < n; i++)
 	{
 		from[i] = -1;
-		cost[i] = INT_MAX;
+		cost[i] = DBL_MAX;
 	}
 	
 	/* Start from point 0. */
@@ -85,4 +106,74 @@ void mst(struct point *data, int n)
 	free(cost);
 	free(from);
 	pqueue_destroy(frontier);
+}
+
+/**
+ * @brief Compares two points.
+ * 
+ * @param p1 Point 1.
+ * @param p2 Point 2.
+ * 
+ * @returns One if point 1 is greater than point 2, and an integer less than
+ *          zero otherwise.
+ */
+static int point_cmp(const void *p1, const void *p2)
+{
+	return ((((struct point *)p1)->x > ((struct point *)p2)->x) ? 1 : -1);
+}
+
+/**
+ * @brief MST clustering kernel.
+ * 
+ * @param points  Data points to cluster.
+ * @param npoints Number of points.
+ */
+void mst_clustering(struct point *points, int npoints)
+{
+	double range;                       /* Region range.                    */
+	double xmin, xmax;                  /* Min. and max for x.              */
+	unsigned densities[NR_REGIONS + 1]; /* Number of points in each region. */
+	
+	/* Sort points according to x coordinate. */
+	qsort(points, npoints, sizeof(struct point), point_cmp);
+	
+	/* Get maximum and minimum. */
+	xmin = points[0].x;
+	xmax = points[npoints - 1].x;
+	
+	/* Compute densities. */
+	range = fabs((xmax - xmin)/NR_REGIONS);
+	for(int i = 0; i <= NR_REGIONS; i++)
+		densities[i] = 0;
+	for (int i = 0; i < npoints; i++)
+	{
+		int j = (int)floor((points[i].x - xmin)/range) + 1;
+		
+		/* Fix rounding error. */
+		if (j > NR_REGIONS)
+			j = NR_REGIONS;
+		
+		densities[j]++;
+	}
+
+	profile_start();
+
+#if defined(_SCHEDULE_STATIC_)
+	#pragma omp parallel for schedule(static)
+#elif defined(_SCHEDULE_GUIDED_)
+	#pragma omp parallel for schedule(guided)
+#elif defined(_SCHEDULE_DYNAMIC_)
+	#pragma omp parallel for schedule(dynamic)
+#elif defined(_SCHEDULE_SRR_)
+	int _densities[NR_REGIONS];
+	memcpy(_densities, &densities[1], NR_REGIONS*sizeof(int));
+	omp_set_workload((unsigned *)&_densities[1], NR_REGIONS);
+	#pragma omp parallel for schedule(runtime)
+#endif
+	for(int i = 1; i <= NR_REGIONS; i++)
+		mst(&points[densities[i - 1]], (int) densities[i]);
+		
+	profile_end();
+	
+	profile_dump();
 }
