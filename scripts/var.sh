@@ -21,7 +21,7 @@
 STRATEGIES=(dynamic srr static)
 
 # Workloads.
-WORKLOAD=(gaussian)
+WORKLOAD=(gaussian beta uniform gamma)
 
 # Kernels
 KERNELS=(linear)
@@ -34,3 +34,8 @@ SKEWNESS=(0.750 0.775 0.800 0.825 0.850 0.875 0.900)
 
 # Load adjust accordingly.
 LOAD=100000000
+
+NITERATIONS=30
+
+
+SEED=1

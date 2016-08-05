@@ -71,12 +71,12 @@ function map_threads
 #
 function extract_variables
 {	
-	grep "Total Cycles" $1.tmp \
-	| cut -d" " -f 3           \
+	grep "Total Time" $1.tmp \
+	| cut -d" " -f 3         \
 	>> $OUTDIR/$1-cycles.csv
 	
 	grep "Thread" $1.tmp       \
-	| cut -d" " -f 3           \
+	| cut -d" " -f 4           \
 	>> $OUTDIR/$1-workload.csv
 }
 
@@ -110,12 +110,14 @@ function parse_benchmark
 function run_benchmark
 {
 	echo "  Benchmark with $2 thread(s)"
-	$BINDIR/benchmark.$5                    \
+	$BINDIR/benchmark.$1                        \
 		--input $INDIR/$3-$NTASKS-$4-$5.csv \
 		--load $LOAD                        \
 		--nthreads $2                       \
 		--ntasks $NTASKS                    \
-		--sort $SORT                        \
+		--sort $6                           \
+		--niterations $NITERATIONS          \
+		--seed $SEED                        \
 	2>> benchmark-$3-$4-$6-$NTASKS-$5-$1-$2.tmp
 }
 
@@ -125,11 +127,12 @@ function run_benchmark
 
 mkdir -p $OUTDIR
 
-map_threads $1 $SMT
+map_threads $NTHREADS $SMT
 
-for strategy in "${STRATEGIES[@]}";
+
+for pdf in "${WORKLOAD[@]}";
 do
-	for pdf in "${WORKLOAD[@]}";
+	for strategy in "${STRATEGIES[@]}";
 	do
 		for skewness in "${SKEWNESS[@]}";
 		do
@@ -138,9 +141,9 @@ do
 				echo "== Running $strategy $skewness $workload"
 				export LD_LIBRARY_PATH=$LIBDIR
 				export OMP_SCHEDULE="$strategy"
-				export OMP_NUM_THREADS=$1
-				run_benchmark $strategy $NTHREADS $workload $skewness $kernel $sorting
-				parse_benchmark $strategy $NTHREADS $workload $skewness $kernel $sorting
+				export OMP_NUM_THREADS=$NTHREADS
+				run_benchmark $strategy $NTHREADS $pdf $skewness $kernel $SORT
+				parse_benchmark $strategy $NTHREADS $pdf $skewness $kernel $SORT
 
 				# House keeping.
 				rm -f *.tmp

@@ -78,6 +78,9 @@ void benchmark(
 {
 	long sum = 0;
 	unsigned loads[nthreads];
+	double times[nthreads];
+
+	memset(times, 0, nthreads*sizeof(double));
 	
 	/* Sanity check. */
 	assert(tasks != NULL);
@@ -108,11 +111,15 @@ void benchmark(
 #endif
 	for (unsigned i = 0; i < ntasks; i++)
 	{
+		double start = 0.0;
+
 		int tid = omp_get_thread_num();
 
 		loads[tid] += tasks[i];
 		
+		start = omp_get_wtime();
 		sum += kernel(tasks[i], load);
+		times[tid] += omp_get_wtime() - start;
 	}
 	
 	profile_end();
@@ -120,7 +127,7 @@ void benchmark(
 	
 	/* Print statistics. */
 	for (int i = 0; i < nthreads; i++)
-		fprintf(stderr, "thread %d: %u\n", i, loads[i]);
+		fprintf(stderr, "thread %d: %u %lf\n", i, loads[i], times[i]);
 		
 	/* House  keeping. */
 #if defined(_SCHEDULE_SRR_)
