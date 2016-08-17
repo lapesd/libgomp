@@ -25,9 +25,6 @@ export LIBDIR     = $(CURDIR)/lib
 export SRCDIR     = $(CURDIR)/src
 
 # Libraries.
-export LIBS += $(CONTRIBDIR)/lib/libgsl.a
-export LIBS += $(CONTRIBDIR)/lib/libgslcblas.a
-export LIBS += $(CONTRIBDIR)/lib/libpapi.a
 export LIBS += $(SRCDIR)/libgomp/libgomp/build/.libs/libgomp.a
 export LIBS += -lm
 
@@ -40,7 +37,6 @@ export CFLAGS += -I $(INCDIR)
 export CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200809L
 export CFLAGS += -pedantic -Wall -Wextra -Werror -fopenmp
 export CFLAGS += -O3
-
 
 # Builds everything.
 all: 
