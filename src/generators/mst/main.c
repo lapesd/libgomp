@@ -169,7 +169,7 @@ int main(int argc, const char **argv)
 			double y;
 			
 			y = rand()/((double)RAND_MAX);			
-			printf("%.10lf %.10lf\n", (double) i, y);
+			printf("%.10lf %.10lf\n", (double) (i + 1), y);
 		}
 		
 		nresidual += n;
@@ -181,7 +181,7 @@ int main(int argc, const char **argv)
 		double y;
 			
 		y = rand()/((double)RAND_MAX);			
-		printf("%.10lf %.10lf\n", (double) i, y);
+		printf("%.10lf %.10lf\n", (double) (args.nregions), y);
 	}
 	
 	/* House keeping. */

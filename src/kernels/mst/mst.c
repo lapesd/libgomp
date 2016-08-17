@@ -22,7 +22,7 @@
 #include <math.h>
 #include <omp.h>
 #include <float.h>
-
+#include <stdio.h>
 #include <util.h>
 #include <profile.h>
 #include <mst.h>
@@ -37,7 +37,7 @@ extern void omp_set_workload(unsigned *, unsigned);
  * 
  * @details Number of regions. Adjust this to improve data locality.
  */
-#define NR_REGIONS 8
+#define NR_REGIONS 48
 
 inline static double distance(struct point p0, struct point p1)
 {
@@ -140,14 +140,15 @@ void mst_clustering(struct point *points, int npoints)
 	/* Get maximum and minimum. */
 	xmin = points[0].x;
 	xmax = points[npoints - 1].x;
-	
+
+
 	/* Compute densities. */
-	range = fabs((xmax - xmin)/NR_REGIONS);
+	range = fabs((xmax - xmin + 1)/NR_REGIONS);
 	for(int i = 0; i <= NR_REGIONS; i++)
 		densities[i] = 0;
 	for (int i = 0; i < npoints; i++)
 	{
-		int j = (int)floor((points[i].x - xmin)/range) + 1;
+		int j = (int)floor((points[i].x - xmin)/range);
 		
 		/* Fix rounding error. */
 		if (j > NR_REGIONS)
@@ -170,8 +171,8 @@ void mst_clustering(struct point *points, int npoints)
 	omp_set_workload((unsigned *)&_densities[1], NR_REGIONS);
 	#pragma omp parallel for schedule(runtime)
 #endif
-	for(int i = 1; i <= NR_REGIONS; i++)
-		mst(&points[densities[i - 1]], (int) densities[i]);
+	for(int i = 0; i < NR_REGIONS; i++)
+		mst(&points[densities[i]], (int) densities[i]);
 		
 	profile_end();
 	
