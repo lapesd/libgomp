@@ -31,9 +31,9 @@
  * 
  * @returns The data points.
  */
-static struct point *readinput(const char *filename, long *npoints)
+static struct point *readinput(const char *filename, int *npoints)
 {
-	long _npoints;         /* Local npoints. */
+	int _npoints;         /* Local npoints. */
 	FILE *infile;         /* Input file.    */
 	struct point *points; /* Data points.   */
 	
@@ -75,7 +75,7 @@ static void usage(void)
  */
 int main(int argc, char **argv)
 {
-	long npoints;          /* Number of points.  */
+	int npoints;          /* Number of points.  */
 	struct point *points; /* Points to cluster. */
 	
 	/* Wrong usage. */
