@@ -44,7 +44,7 @@ static void usage(void)
 	printf("Options:\n");
 	printf("  --help              Prints this information and exits\n");
 	printf("  --nregions <number> Number of regions\n");
-	printf("  --input <filename>    Input workload file\n");
+	printf("  --input <filename>  Input workload file\n");
 	printf("  --npoints <number>  Number of data points\n");
 	
 	exit(EXIT_SUCCESS);
