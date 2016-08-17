@@ -57,12 +57,12 @@ static void usage(void)
 /**
  * @brief Checks program arguments.
  */
-static void chkargs(const char *sortname)
+static void chkargs(void)
 {
 	/* Check arguments. */
 	if (args.npoints == 0)
 		error("invalid number of data points");
-	else if (args.regions == 0)
+	else if (args.nregions == 0)
 		error("invalid number of regions");
 	else if (args.input == NULL)
 		error("missing input workload file");
@@ -90,7 +90,7 @@ static void readargs(long argc, const char **argv)
 	}
 	
 	/* Check arguments. */
-	chkargs(sortname);
+	chkargs();
 }
 
 /**
@@ -150,13 +150,13 @@ int main(int argc, const char **argv)
 	/* Compute densities. */
 	densities = smalloc(args.nregions*sizeof(double));
 	total = 0;
-	for (unsigned i = 0; i < args.nregions; i++)
+	for (int i = 0; i < args.nregions; i++)
 		total += regions[i];
-	for (unsigned i = 0; i < args.nregions; i++)
-		densities = regions[i]/((double)total);
+	for (int i = 0; i < args.nregions; i++)
+		densities[i] = regions[i]/((double)total);
 	
 	/* Dump input data. */
-	residual = 0;
+	nresidual = 0;
 	printf("%d\n", args.npoints);
 	for (int i = 0; i < args.nregions; i++)
 	{
@@ -164,15 +164,15 @@ int main(int argc, const char **argv)
 		
 		n = densities[i]*args.npoints;
 		
-		for (j = 0; j < n; j++)
+		for (int j = 0; j < n; j++)
 		{
 			double y;
 			
 			y = rand()/((double)RAND_MAX);			
-			printf("%.10lf %.10lf\n", i, y);
+			printf("%.10lf %.10lf\n", (double) i, y);
 		}
 		
-		residual += n;
+		nresidual += n;
 	}
 	
 	/* Residual points. */
@@ -181,11 +181,11 @@ int main(int argc, const char **argv)
 		double y;
 			
 		y = rand()/((double)RAND_MAX);			
-		printf("%.10lf %.10lf\n", i, y);
+		printf("%.10lf %.10lf\n", (double) i, y);
 	}
 	
 	/* House keeping. */
-	free(densities)
+	free(densities);
 	free(regions);
 	
 	return (EXIT_SUCCESS);

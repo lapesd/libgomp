@@ -25,7 +25,7 @@ EXEC_MST = mst_gen
 .PHONY: is mst
 
 # Builds everything.
-all: is
+all: is mst
 
 # Builds is kernel input data generator.
 is:
