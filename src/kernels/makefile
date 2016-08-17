@@ -23,29 +23,29 @@ all: static guided dynamic smart-round-robin
 static:
 #	cd is && $(MAKE) static
 #	cd knn && $(MAKE) static
-#	cd mst && $(MAKE) static
+	cd mst && $(MAKE) static
 
 # Builds dynamic kernels.
 dynamic:
 #	cd is && $(MAKE) dynamic
 #	cd knn && $(MAKE) dynamic
-#	cd mst && $(MAKE) dynamic
+	cd mst && $(MAKE) dynamic
 
 # Builds guided kernels.
 guided:
-	cd is && $(MAKE) guided
-##	cd knn && $(MAKE) guided
-#	cd mst && $(MAKE) guided
+#	cd is && $(MAKE) guided
+#	cd knn && $(MAKE) guided
+	cd mst && $(MAKE) guided
 
 # Builds srr kernels.
 smart-round-robin:
 #	cd is && $(MAKE) srr
 #	cd knn && $(MAKE) srr
-#	cd mst && $(MAKE) srr
+	cd mst && $(MAKE) srr
 
 # Cleans compilation files.
 clean:
-	cd is && $(MAKE) clean
+#	cd is && $(MAKE) clean
 #	cd knn && $(MAKE) clean
-#	cd mst && $(MAKE) clean
+	cd mst && $(MAKE) clean
 
