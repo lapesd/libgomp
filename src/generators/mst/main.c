@@ -51,6 +51,37 @@ static void usage(void)
 }
 
 /*============================================================================*
+ *                              Array Shuffling                               *
+ *============================================================================*/
+
+/**
+ * @brief Shuffles and array.
+ * 
+ * @param a    Target array.
+ * @param n    Size of target array.
+ * @param seed Seed for shuffling.
+ */
+static void array_shuffle(unsigned *a, unsigned n, int seed)
+{
+	/* Let us be totally random. */
+	srand(seed);
+	
+	/* Shuffle array. */
+	for (unsigned i = 0; i < n - 1; i++)
+	{
+		unsigned j; /* Shuffle index.  */
+		unsigned t; /* Temporary data. */
+		
+		j = i + rand()/(RAND_MAX/(n - i) + 1);
+			
+		t = a[i];
+		a[i] = a[j];
+		a[j] = t;
+	}
+}
+
+
+/*============================================================================*
  *                             Arguments Parsing                              *
  *============================================================================*/
 
@@ -129,6 +160,8 @@ static unsigned *readfile(const char *input, unsigned ntasks)
 		error("cannot read input file");
 	
 	fclose(fp);
+	
+	array_shuffle(tasks, ntasks, 1);
 	
 	return (tasks);
 }
