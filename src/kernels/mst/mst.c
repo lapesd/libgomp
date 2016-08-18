@@ -133,6 +133,9 @@ void mst_clustering(struct point *points, int npoints)
 	double range;                   /* Region range.                    */
 	double xmin, xmax;              /* Min. and max for x.              */
 	unsigned densities[NR_REGIONS]; /* Number of points in each region. */
+	double time[24];
+
+	memset(time, 0, 24*sizeof(double));
 	
 	/* Sort points according to x coordinate. */
 	qsort(points, npoints, sizeof(struct point), point_cmp);
@@ -171,9 +174,22 @@ void mst_clustering(struct point *points, int npoints)
 	#pragma omp parallel for schedule(runtime)
 #endif
 	for(int i = 0; i < NR_REGIONS; i++)
+	{
+		double start, end;
+
+		start = omp_get_wtime();
+
 		mst(&points[densities[i]], (int) densities[i]);
+
+		end = omp_get_wtime();
+
+		time[omp_get_thread_num()] += end - start;
+	}
 		
 	profile_end();
+
+	for (int i = 0; i < 24; i++)
+		printf("Thread %d: %lf\n", i, time[i]);
 	
 	profile_dump();
 }
