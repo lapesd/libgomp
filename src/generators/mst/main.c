@@ -172,44 +172,34 @@ int main(int argc, const char **argv)
 	unsigned *regions; /* Region load.                 */
 	int k;             /* Residual number of points.   */
 	unsigned total;    /* Total region load.           */
-	double *densities; /* Number of points per region. */
 	int *x;            /* X coordinates.               */
 
 	readargs(argc, argv);
-	
-	x = smalloc(args.npoints*sizeof(int));
 
 	/* Read input workload. */	
 	regions = readfile(args.input, args.nregions);
 	array_shuffle(regions, args.nregions, 1);
 
-	/* Compute densities. */
-	densities = smalloc(args.nregions*sizeof(double));
+	/* Compute total number of points. */
 	total = 0;
 	for (int i = 0; i < args.nregions; i++)
 		total += regions[i];
-	for (int i = 0; i < args.nregions; i++)
-		densities[i] = regions[i]/((double)total);
+	
+	x = smalloc(args.npoints*total*sizeof(int));
 	
 	/* Compute x coordinates. */
 	k = 0;
-	printf("%d\n", args.npoints);
+	printf("%d\n", args.npoints*total);
 	for (int i = 0; i < args.nregions; i++)
 	{
-		int n;
-		
-		n = densities[i]*args.npoints;
-		
-		for (int j = 0; j < n; j++)
+		fprintf(stderr, "%u %u\n", regions[i], total);
+			
+		for (unsigned j = 0; j < regions[i]*args.npoints; j++)
 			x[k++] = i + 1;
 	}
 	
-	/* Residual points. */
-	for (int i = k; i < args.npoints; i++)
-		x[i] = args.nregions;
-
 	/* Dump points. */
-	for (int i = 0; i < args.npoints; i++)
+	for (unsigned i = 0; i < args.npoints*total; i++)
 	{
 		double y;
 			
@@ -219,7 +209,6 @@ int main(int argc, const char **argv)
 	
 	/* House keeping. */
 	free(x);
-	free(densities);
 	free(regions);
 	
 	return (EXIT_SUCCESS);
