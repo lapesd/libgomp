@@ -206,7 +206,7 @@ int main(int argc, const char **argv)
 	
 	/* Residual points. */
 	for (int i = k; i < args.npoints; i++)
-		x[i] = args.npoints;
+		x[i] = args.nregions;
 
 	/* Dump points. */
 	for (int i = 0; i < args.npoints; i++)
