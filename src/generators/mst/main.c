@@ -192,8 +192,6 @@ int main(int argc, const char **argv)
 	printf("%d\n", args.npoints*total);
 	for (int i = 0; i < args.nregions; i++)
 	{
-		fprintf(stderr, "%u %u\n", regions[i], total);
-			
 		for (unsigned j = 0; j < regions[i]*args.npoints; j++)
 			x[k++] = i + 1;
 	}
