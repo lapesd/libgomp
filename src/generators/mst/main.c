@@ -161,8 +161,6 @@ static unsigned *readfile(const char *input, unsigned ntasks)
 	
 	fclose(fp);
 	
-	array_shuffle(tasks, ntasks, 1);
-	
 	return (tasks);
 }
 
@@ -172,14 +170,19 @@ static unsigned *readfile(const char *input, unsigned ntasks)
 int main(int argc, const char **argv)
 {
 	unsigned *regions; /* Region load.                 */
-	int nresidual;     /* Residual number of points.   */
+	int k;             /* Residual number of points.   */
 	unsigned total;    /* Total region load.           */
 	double *densities; /* Number of points per region. */
-	
+	int *x;            /* X coordinates.               */
+
 	readargs(argc, argv);
 	
+	x = smalloc(args.npoints*sizeof(int));
+
+	/* Read input workload. */	
 	regions = readfile(args.input, args.nregions);
-	
+	array_shuffle(regions, args.nregions, 1);
+
 	/* Compute densities. */
 	densities = smalloc(args.nregions*sizeof(double));
 	total = 0;
@@ -188,8 +191,8 @@ int main(int argc, const char **argv)
 	for (int i = 0; i < args.nregions; i++)
 		densities[i] = regions[i]/((double)total);
 	
-	/* Dump input data. */
-	nresidual = 0;
+	/* Compute x coordinates. */
+	k = 0;
 	printf("%d\n", args.npoints);
 	for (int i = 0; i < args.nregions; i++)
 	{
@@ -198,26 +201,24 @@ int main(int argc, const char **argv)
 		n = densities[i]*args.npoints;
 		
 		for (int j = 0; j < n; j++)
-		{
-			double y;
-			
-			y = rand()/((double)RAND_MAX);			
-			printf("%.10lf %.10lf\n", (double) (i + 1), y);
-		}
-		
-		nresidual += n;
+			x[k++] = i + 1;
 	}
 	
 	/* Residual points. */
-	for (int i = nresidual; i < args.npoints; i++)
+	for (int i = k; i < args.npoints; i++)
+		x[i] = args.npoints;
+
+	/* Dump points. */
+	for (int i = 0; i < args.npoints; i++)
 	{
 		double y;
 			
 		y = rand()/((double)RAND_MAX);			
-		printf("%.10lf %.10lf\n", (double) (args.nregions), y);
+		printf("%.10lf %.10lf\n", (double) x[i], y);
 	}
 	
 	/* House keeping. */
+	free(x);
 	free(densities);
 	free(regions);
 	
