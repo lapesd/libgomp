@@ -134,8 +134,10 @@ void mst_clustering(struct point *points, int npoints)
 	double xmin, xmax;              /* Min. and max for x.              */
 	unsigned densities[NR_REGIONS]; /* Number of points in each region. */
 	double time[24];
+	unsigned workload[24];
 
 	memset(time, 0, 24*sizeof(double));
+	memset(workload, 0, 24*sizeof(unsigned));
 	
 	/* Sort points according to x coordinate. */
 	qsort(points, npoints, sizeof(struct point), point_cmp);
@@ -184,12 +186,13 @@ void mst_clustering(struct point *points, int npoints)
 		end = omp_get_wtime();
 
 		time[omp_get_thread_num()] += end - start;
+		workload[omp_get_thread_num()] += densities[i];
 	}
 		
 	profile_end();
 
 	for (int i = 0; i < 24; i++)
-		printf("Thread %d: %lf\n", i, time[i]);
+		printf("Thread %d: %lf %u\n", i, time[i], workload[i]);
 	
 	profile_dump();
 }
