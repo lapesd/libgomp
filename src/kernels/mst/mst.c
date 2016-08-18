@@ -132,7 +132,7 @@ void mst_clustering(struct point *points, int npoints)
 {
 	double range;                   /* Region range.                    */
 	double xmin, xmax;              /* Min. and max for x.              */
-	unsigned densities[NR_REGIONS]; /* Number of points in each region. */
+	unsigned densities[NR_REGIONS + 1]; /* Number of points in each region. */
 	double time[24];
 	unsigned workload[24];
 
@@ -148,11 +148,11 @@ void mst_clustering(struct point *points, int npoints)
 
 	/* Compute densities. */
 	range = fabs((xmax - xmin + 1)/NR_REGIONS);
-	for(int i = 0; i < NR_REGIONS; i++)
+	for(int i = 0; i <= NR_REGIONS; i++)
 		densities[i] = 0;
 	for (int i = 0; i < npoints; i++)
 	{
-		int j = (int)floor((points[i].x - xmin)/range);
+		int j = (int)floor((points[i].x - xmin)/range) + 1;
 		
 		/* Fix rounding error. */
 		if (j > NR_REGIONS)
@@ -171,17 +171,17 @@ void mst_clustering(struct point *points, int npoints)
 	#pragma omp parallel for schedule(dynamic)
 #elif defined(_SCHEDULE_SRR_)
 	int _densities[NR_REGIONS];
-	memcpy(_densities, &densities[0], NR_REGIONS*sizeof(int));
-	omp_set_workload((unsigned *)&_densities[0], NR_REGIONS);
+	memcpy(_densities, &densities[1], NR_REGIONS*sizeof(int));
+	omp_set_workload((unsigned *)&_densities[1], NR_REGIONS);
 	#pragma omp parallel for schedule(runtime)
 #endif
-	for(int i = 0; i < NR_REGIONS; i++)
+	for(int i = 1; i <= NR_REGIONS; i++)
 	{
 		double start, end;
 
 		start = omp_get_wtime();
 
-		mst(&points[densities[i]], (int) densities[i]);
+		mst(&points[densities[i - 1]], (int) densities[i]);
 
 		end = omp_get_wtime();
 
