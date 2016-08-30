@@ -107,7 +107,7 @@ static void readargs(long argc, const char **argv)
 static double *readfile(const char *input, unsigned ntasks)
 {
 	FILE *fp;
-	unsigned sum;
+	unsigned greatest;
 	unsigned *tasks;
 	double *workload;
 	
@@ -118,7 +118,7 @@ static double *readfile(const char *input, unsigned ntasks)
 	assert(fp != NULL);
 	
 	/* Read file. */
-	sum = 0;
+	greatest = 0;
 	for (unsigned i = 0; i < ntasks; i++)
 	{
 		if (fscanf(fp, "%u", &tasks[i]) == EOF)
@@ -132,7 +132,8 @@ static double *readfile(const char *input, unsigned ntasks)
 			break;
 		}
 
-		sum += tasks[i];
+		if (tasks[i] > greatest)
+			greatest = tasks[i];
 	}
 	
 	/* I/O error. */
@@ -140,7 +141,7 @@ static double *readfile(const char *input, unsigned ntasks)
 		error("cannot read input file");
 	
 	for (unsigned i = 0; i < ntasks; i++)
-		workload[i] = tasks[i]/((double) sum);
+		workload[i] = tasks[i]/((double) greatest);
 
 	/* House keeping. */
 	fclose(fp);
@@ -167,7 +168,7 @@ static void matrix_dump(int n, int is_sparse, double *workload, int ntasks)
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < n; j++)
-			m[i*n + j] = ((double)rand())/RAND_MAX;
+			m[i*n + j] = ((double)rand())/RAND_MAX + 0.1;
 	}
 
 	/* Sparse matrix. */
@@ -183,11 +184,31 @@ static void matrix_dump(int n, int is_sparse, double *workload, int ntasks)
 			{
 				int i, j;
 
-				i = rand()%(n/ntasks);
-				j = rand()%n;
-
+				do
+				{
+					i = rand()%(n/ntasks);
+					j = rand()%n;
+				} while(m[(k*(n/ntasks) + i)*n + j] == 0.0);
+				
 				m[(k*(n/ntasks) + i)*n + j] = 0.0;
 			}
+		}
+
+		/* Print matrix statistics. */
+		for (int k = 0; k < ntasks; k++)
+		{
+			int count = 0;
+
+			for (int i = 0; i < (n/ntasks); i++)
+			{
+				for (int j = 0; j < n; j++)
+				{
+					if (m[(k*(n/ntasks) + i)*n + j])
+						count++;
+				}
+			}
+
+			fprintf(stderr, "%d: %.2lf\n", k, 100*((double) count)/(n*(n/ntasks)));
 		}
 	}
 
@@ -199,9 +220,11 @@ static void matrix_dump(int n, int is_sparse, double *workload, int ntasks)
 		printf("\n");
 	}
 
+
 	/* House keeping. */
 	free(m);
 }
+
 /**
  * @brief SMM kernel input data generator.
  */
