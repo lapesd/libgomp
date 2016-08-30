@@ -17,7 +17,7 @@
 # MA 02110-1301, USA.
 
 # Tweaks on toolchain.
-CFLAGS += -I include
+CFLAGS += -I include -DNITERATIONS=5
 
 # Executable file.
 EXEC = smm

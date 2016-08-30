@@ -18,8 +18,10 @@
  */
 
 #include <assert.h>
+#include <omp.h>
 
 #include <util.h>
+#include <profile.h>
 
 /**
  * Kernel arguments.
@@ -81,12 +83,20 @@ void smm_end(void)
  */
 void smm_run(int it)
 {
-	((void) it);
-
 	/* Sanity check. */
 	assert(args.c != NULL);
 
+	if (it)
+		profile_start();
+
 	/* Perform matrix multiplication. */
+#if defined(_SCHEDULE_STATIC_)
+	#pragma omp parallel for schedule(static)
+#elif defined(_SCHEDULE_GUIDED_)
+	#pragma omp parallel for schedule(guided)
+#elif defined(_SCHEDULE_DYNAMIC_)
+	#pragma omp parallel for schedule(dynamic)
+#endif
 	for (int i = 0; i < args.n; i++)
 	{
 		for (int j = 0; j < args.n; j++)
@@ -102,5 +112,11 @@ void smm_run(int it)
 				M(args.c, i, j) += M(args.a, i, k)*M(args.b, k, i);
 			}
 		}
+	}
+	
+	if (it)
+	{
+		profile_end();
+		profile_dump();
 	}
 }

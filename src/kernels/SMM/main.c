@@ -111,7 +111,8 @@ int main(int argc, const char **argv)
 
 	/* Run kernel. */
 	smm_init(args.a, args.b, args.n);
-	smm_run(0);
+	for (int it = 0; it < NITERATIONS + 1; it++)
+		smm_run(it);
 	smm_end();
 
 	/* House keeping. */
