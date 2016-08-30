@@ -53,6 +53,7 @@ generators: $(OBJ)
 
 # Builds libgomp.
 libgomp:
+	mkdir libgomp/libgomp/build ; \
 	cd libgomp/libgomp/build ; \
 	CFLAGS="" LIBS="" PREFIX="" ../configure --disable-multilib ; \
 	$(MAKE)
@@ -60,7 +61,9 @@ libgomp:
 # Cleans libgomp.
 libgomp-clean:
 	cd libgomp/libgomp/build ; \
-	$(MAKE) distclean
+	$(MAKE) distclean ; \
+	cd .. ; \
+	rm -rf libgomp/libgomp/build
 	
 # Cleans everything.
 clean:
