@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <util.h>
 
@@ -101,19 +102,23 @@ static void readargs(long argc, const char **argv)
  * @param input Input filename.
  * @param ntasks Number of tasks.
  *
- * @returns Tasks.
+ * @returns Workload.
  */
-static unsigned *readfile(const char *input, unsigned ntasks)
+static double *readfile(const char *input, unsigned ntasks)
 {
 	FILE *fp;
+	unsigned sum;
 	unsigned *tasks;
+	double *workload;
 	
 	tasks = smalloc(ntasks*sizeof(unsigned));
-	
+	workload = smalloc(ntasks*sizeof(double));
+
 	fp = fopen(input, "r");
 	assert(fp != NULL);
 	
 	/* Read file. */
+	sum = 0;
 	for (unsigned i = 0; i < ntasks; i++)
 	{
 		if (fscanf(fp, "%u", &tasks[i]) == EOF)
@@ -126,15 +131,22 @@ static unsigned *readfile(const char *input, unsigned ntasks)
 				error("unknown error");
 			break;
 		}
+
+		sum += tasks[i];
 	}
 	
 	/* I/O error. */
 	if (ferror(fp))
 		error("cannot read input file");
 	
+	for (unsigned i = 0; i < ntasks; i++)
+		workload[i] = tasks[i]/((double) sum);
+
+	/* House keeping. */
 	fclose(fp);
-	
-	return (tasks);
+	free(tasks);
+
+	return (workload);
 }
 
 /**
@@ -145,7 +157,7 @@ static unsigned *readfile(const char *input, unsigned ntasks)
  * @param workload  Workload.
  * @param ntasks    Workload size.
  */
-static void matrix_dump(int n, int is_sparse, unsigned *workload, int ntasks)
+static void matrix_dump(int n, int is_sparse, double *workload, int ntasks)
 {
 	double *m;
 
@@ -165,7 +177,7 @@ static void matrix_dump(int n, int is_sparse, unsigned *workload, int ntasks)
 		{
 			int nzeros;
 
-			nzeros = n*(n/ntasks) - workload[k];
+			nzeros = n*(n/ntasks) - floor(n*(n/ntasks)*workload[k]);
 
 			while (nzeros-- > 0)
 			{
@@ -195,7 +207,7 @@ static void matrix_dump(int n, int is_sparse, unsigned *workload, int ntasks)
  */
 int main(int argc, const char **argv)
 {
-	unsigned *workload;
+	double *workload;
 
 	readargs(argc, argv);
 
