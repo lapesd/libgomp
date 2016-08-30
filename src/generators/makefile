@@ -20,12 +20,13 @@
 # Executable files.
 EXEC_IS = is_gen
 EXEC_MST = mst_gen
+EXEC_SMM = smm.gen
 
 # Conflicts.
-.PHONY: is mst
+.PHONY: is mst smm
 
 # Builds everything.
-all: is mst
+all: is mst smm
 
 # Builds is kernel input data generator.
 is:
@@ -35,7 +36,12 @@ is:
 mst:
 	$(CC) $(CFLAGS) mst/*.c -o $(BINDIR)/$(EXEC_MST) $(LIBS)
 
+# Builds SMM kernel input data generator.
+smm:
+	$(CC) $(CFLAGS) smm/*.c -o $(BINDIR)/$(EXEC_SMM) $(LIBS)
+
 # Cleans compilation files.
 clean:
 	rm -f $(BINDIR)/$(EXEC_MST)
+	rm -f $(BINDIR)/$(EXEC_SMM)
 	rm -f $(BINDIR)/$(EXEC_IS)
