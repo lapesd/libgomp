@@ -96,6 +96,36 @@ static void readargs(long argc, const char **argv)
 	chkargs();
 }
 
+/*============================================================================*
+ *                              Array Shuffling                               *
+ *============================================================================*/
+
+/**
+ * @brief Shuffles and array.
+ * 
+ * @param a    Target array.
+ * @param n    Size of target array.
+ * @param seed Seed for shuffling.
+ */
+static void array_shuffle(unsigned *a, unsigned n, int seed)
+{
+	/* Let us be totally random. */
+	srand(seed);
+	
+	/* Shuffle array. */
+	for (unsigned i = 0; i < n - 1; i++)
+	{
+		unsigned j; /* Shuffle index.  */
+		unsigned t; /* Temporary data. */
+		
+		j = i + rand()/(RAND_MAX/(n - i) + 1);
+			
+		t = a[i];
+		a[i] = a[j];
+		a[j] = t;
+	}
+}
+
 /**
  * @brief Reads input file
  * 
@@ -139,7 +169,9 @@ static double *readfile(const char *input, unsigned ntasks)
 	/* I/O error. */
 	if (ferror(fp))
 		error("cannot read input file");
-	
+
+	array_shuffle(tasks, ntasks, 307);
+
 	for (unsigned i = 0; i < ntasks; i++)
 		workload[i] = tasks[i]/((double) greatest);
 
