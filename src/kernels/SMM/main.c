@@ -46,17 +46,14 @@ static struct
 static double *matrix_read(FILE *infile, int n)
 {
 	double *m, *p;
-
-	m = p = smalloc(args.n*args.n*sizeof(double));
+	
+	m = p = smalloc(n*n*sizeof(double));
 
 	/* Read matrix. */
-	for (int c = 0; c < 2; c++)
+	for (int i = 0; i < n; i++)
 	{
-		for (int i = 0; i < n; i++)
-		{
-			for (int j = 0; j < n; j++)
-				assert(fscanf(infile, "%lf", p++) == 1);
-		}
+		for (int j = 0; j < n; j++)
+		assert(fscanf(infile, "%lf", p++) == 1);
 	}
 
 	return (m);
@@ -83,7 +80,7 @@ static void readinput(const char *filename)
 	/* Read input matrices. */
 	assert(fscanf(infile, "%d", &args.n) == 1);
 	args.a = matrix_read(infile, args.n);
-	args.b = smalloc(args.n*args.n*sizeof(double));
+	args.b = matrix_read(infile, args.n);
 
 	/* House keeping. */
 	fclose(infile);
@@ -116,7 +113,6 @@ int main(int argc, const char **argv)
 	smm_init(args.a, args.b, args.n);
 	smm_run(0);
 	smm_end();
-
 
 	/* House keeping. */
 	free(args.a);
