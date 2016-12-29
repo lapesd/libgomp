@@ -20,11 +20,6 @@
 #ifndef BENCHMARK_H_
 #define BENCHMARK_H_
 
-	/**
-	 * @brief Number of iterations.
-	 */
-	#define NITERATIONS 10
-
 	/* Forward definitions. */
 	extern void benchmark(const unsigned *, unsigned, int, long);
 
