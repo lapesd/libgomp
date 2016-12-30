@@ -26,7 +26,6 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include <rng.h>
 #include <util.h>
 
 #include <benchmark.h>
