@@ -73,7 +73,7 @@ static long kernel(unsigned n, long load)
  */
 static void benchmark_dump(const double *respvar, int nthreads, const char *prefix)
 {
-	unsigned min, max, total;
+	double min, max, total;
 	double mean, stddev;
 
 	min = UINT_MAX; max = 0;
@@ -82,7 +82,7 @@ static void benchmark_dump(const double *respvar, int nthreads, const char *pref
 	/* Compute min, max, total. */
 	for (int i = 0; i < nthreads; i++)
 	{
-		unsigned wtotal;
+		double wtotal;
 
 		wtotal = respvar[i];
 
@@ -105,8 +105,8 @@ static void benchmark_dump(const double *respvar, int nthreads, const char *pref
 	stddev = sqrt(stddev/(nthreads));
 
 	/* Print statistics. */
-	printf("%s_min: %d\n", prefix, min);
-	printf("%s_max: %d\n", prefix, max);
+	printf("%s_min: %lf\n", prefix, min);
+	printf("%s_max: %lf\n", prefix, max);
 	printf("%s_mean: %lf\n", prefix, mean);
 	printf("%s_stddev: %lf\n", prefix, 100*stddev/mean);
 	printf("%s_imbalance: %lf\n", prefix, 100*(max - min)/((double) total));
