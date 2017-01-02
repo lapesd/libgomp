@@ -23,6 +23,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <limits.h>
 
 #include <profile.h>
 #include <util.h>
@@ -63,6 +65,55 @@ static long kernel(unsigned n, long load)
  *============================================================================*/
 
 /**
+ * @brief Dumps simulation statistics.
+ *
+ * @param respvar  Response variable.
+ * @param nthreads Number of threads.
+ * @param prefix   Prefix for response variable.
+ */
+static void benchmark_dump(const double *respvar, int nthreads, const char *prefix)
+{
+	unsigned min, max, total;
+	double mean, stddev;
+
+	min = UINT_MAX; max = 0;
+	total = 0; mean = 0.0; stddev = 0.0;
+
+	/* Compute min, max, total. */
+	for (int i = 0; i < nthreads; i++)
+	{
+		unsigned wtotal;
+
+		wtotal = respvar[i];
+
+		if (min > wtotal)
+			min = wtotal;
+		if (max < wtotal)
+			max = wtotal;
+
+		total += wtotal;
+	}
+
+	/* Compute mean. */
+	mean = ((double) total)/nthreads;
+
+	/* Compute stddev. */
+	for (int i = 0; i < nthreads; i++)
+	{
+		stddev += pow(respvar[i] - mean, 2);
+	}
+	stddev = sqrt(stddev/(nthreads));
+
+	/* Print statistics. */
+	printf("%s_min: %d\n", prefix, min);
+	printf("%s_max: %d\n", prefix, max);
+	printf("%s_mean: %lf\n", prefix, mean);
+	printf("%s_stddev: %lf\n", prefix, 100*stddev/mean);
+	printf("%s_imbalance: %lf\n", prefix, 100*(max - min)/((double) total));
+	printf("%s_speeddown: %lf\n", prefix, max/((double) min));
+}
+
+/**
  * @brief Synthetic benchmark.
  * 
  * @param tasks    Tasks.
@@ -77,7 +128,7 @@ void benchmark(
 	long load)
 {
 	long sum = 0;
-	unsigned loads[nthreads];
+	double loads[nthreads];
 	double times[nthreads];
 
 	memset(times, 0, nthreads*sizeof(double));
@@ -125,10 +176,9 @@ void benchmark(
 	profile_end();
 	profile_dump();
 	
-	/* Print statistics. */
-	for (int i = 0; i < nthreads; i++)
-		fprintf(stderr, "thread %d: %u %lf\n", i, loads[i], times[i]);
-		
+	benchmark_dump(loads, nthreads, "load");
+	benchmark_dump(times, nthreads, "time");
+
 	/* House  keeping. */
 #if defined(_SCHEDULE_SRR_)
 	free(_tasks);
