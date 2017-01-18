@@ -35,12 +35,13 @@
  */
 static struct
 {
-	const char *input;  /**< Input data file.                       */
-	unsigned nthreads;  /**< Number of threads.                     */
-	unsigned ntasks;    /**< Number of tasks.                       */
-	unsigned chunksize; /**< Chunk size for the dynamic scheduling. */
-	unsigned load;      /**< Kernel load.                           */
-} args = { NULL, 0, 0, 0, 1};
+	const char *input;                    /**< Input data file.                       */
+	unsigned nthreads;                    /**< Number of threads.                     */
+	unsigned ntasks;                      /**< Number of tasks.                       */
+	unsigned chunksize;                   /**< Chunk size for the dynamic scheduling. */
+	unsigned load;                        /**< Kernel load.                           */
+	void (*kernel)(unsigned *, unsigned); /**< Application kernel.       */
+} args = { NULL, 0, 0, 0, 1, NULL };
 
 /**
  * @brief Prints program usage and exits.
@@ -53,6 +54,10 @@ static void usage(void)
 	printf("Brief: loop scheduler simulator\n");
 	printf("Options:\n");
 	printf("  --help                Display this message\n");
+	printf("  --kernel <name>       Kernel complexity.\n");
+	printf("           linear          Linear kernel\n");
+	printf("           logarithmic     Logarithm kernel\n");
+	printf("           quadratic       Quadratic kernel\n");
 	printf("  --input <filename>    Input workload file\n");
 	printf("  --load <num>          kernel load\n");
 	printf("  --nthreads <num>      Number of threads\n");
@@ -61,13 +66,65 @@ static void usage(void)
 }
 
 /*============================================================================*
+ * KERNELS                                                                    *
+ *============================================================================*/
+
+/**
+ * @brief Applies a linear kernel in a workload
+ *
+ * @param w     Target workload.
+ * @param wsize Size of target workload.
+ */
+static void kernel_linear(unsigned *w, unsigned wsize)
+{
+	((void) w);
+	((void) wsize);
+}
+
+/**
+ * @brief Applies a logarithmic kernel in a workload
+ *
+ * @param w     Target workload.
+ * @param wsize Size of target workload.
+ */
+static void kernel_logarithmic(unsigned *w, unsigned wsize)
+{
+	for (unsigned i = 0; i < wsize; i++)
+	{
+		unsigned load;
+
+		load = w[i];
+		w[i] = floor(load*(log(load)/log(2.0)));
+	}
+}
+
+/**
+ * @brief Applies a quadratic kernel in a workload
+ *
+ * @param w     Target workload.
+ * @param wsize Size of target workload.
+ */
+static void kernel_quadratic(unsigned *w, unsigned wsize)
+{
+	for (unsigned i = 0; i < wsize; i++)
+	{
+		unsigned load;
+
+		load = w[i];
+		w[i] = load*load;
+	}
+}
+
+/*============================================================================*
  *                             Argument Checking                              *
  *============================================================================*/
 
 /**
  * @brief Checks program arguments.
+ *
+ * @param kernelname Application kernel name.
  */
-static void chkargs(void)
+static void chkargs(const char *kernelname)
 {
 	/* Check arguments. */
 	if (args.nthreads == 0)
@@ -76,11 +133,35 @@ static void chkargs(void)
 		error("invalid kernel load");
 	else if (args.input == NULL)
 		error("missing input workload file");
+	if (kernelname == NULL)
+		error("missing kernel name");
 }
 
 /*============================================================================*
  *                              Argument Reading                              *
  *============================================================================*/
+
+/**
+ * @brief Gets application kernel.
+ *
+ * @param kernelname Kernel name.
+ *
+ * @returns Application kernel.
+ */
+static void (*get_kernel(const char *kernelname))(unsigned *, unsigned)
+{
+	if (!strcmp(kernelname, "linear"))
+		return (kernel_linear);
+	if (!strcmp(kernelname, "logarithmic"))
+		return (kernel_logarithmic);
+	if (!strcmp(kernelname, "quadratic"))
+		return (kernel_quadratic);
+
+	error("unsupported application kernel");
+
+	/* Never gets here. */
+	return (NULL);
+}
 
 /**
  * @brief Reads command line arguments.
@@ -90,6 +171,8 @@ static void chkargs(void)
  */
 static void readargs(int argc, const char **argv)
 {
+	const char *kernelname = NULL;
+
 	/* Parse command line arguments. */
 	for (int i = 1; i < argc; i++)
 	{
@@ -99,11 +182,15 @@ static void readargs(int argc, const char **argv)
 			args.nthreads = atof(argv[++i]);
 		else if (!strcmp(argv[i], "--help"))
 			usage();
+		else if (!strcmp(argv[i], "--kernel"))
+			kernelname = argv[++i];
 		else if (!strcmp(argv[i], "--input"))
 			args.input = argv[++i];
 	}
 
-	chkargs();
+	chkargs(kernelname);
+
+	args.kernel = get_kernel(kernelname);
 }
 
 /**
@@ -143,7 +230,9 @@ static unsigned *readfile(const char *input)
 		error("cannot read input file");
 	
 	fclose(fp);
-	
+
+	args.kernel(tasks, args.ntasks);
+
 	return (tasks);
 }
 
