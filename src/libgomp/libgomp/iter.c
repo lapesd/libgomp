@@ -335,7 +335,6 @@ found:
 int gomp_iter_profile_next(long *pstart, long *pend)
 {
   if (profile_loop == 1) {
-    _GET_TICK(t1);
   }
   
   struct gomp_thread *thr = gomp_thread ();
@@ -355,7 +354,6 @@ int gomp_iter_profile_next(long *pstart, long *pend)
       profile_loop = 0;
     }
 
-    _GET_TICK(t0);
   }
 
   return ws->next - ws->incr == ws->end;

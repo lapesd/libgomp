@@ -56,7 +56,6 @@ enum memmodel
   MEMMODEL_SEQ_CST = 5
 };
 
-#define _GET_TICK(t) __asm__ volatile("rdtsc" : "=a" ((t).sub.low), "=d" ((t).sub.high))
 union tick_t
 {
   uint64_t tick;
