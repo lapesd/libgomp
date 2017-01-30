@@ -31,7 +31,7 @@
 
 #include <benchmark.h>
 
-#if defined(_SCHEDULE_SRR_)
+#if defined(_SCHEDULE_SRR_) || defined(_SCHEDULE_WAS_)
 extern void omp_set_workload(unsigned *, unsigned);
 #endif
 
@@ -141,7 +141,7 @@ void benchmark(
 	memset(loads, 0, nthreads*sizeof(unsigned));
 	
 	/* Predict workload. */
-#if defined(_SCHEDULE_SRR_)
+#if defined(_SCHEDULE_SRR_) || defined(_SCHEDULE_WAS_)
 	unsigned *_tasks;
 	_tasks = smalloc(ntasks*sizeof(unsigned));
 	memcpy(_tasks, tasks, ntasks*sizeof(unsigned));
@@ -157,6 +157,8 @@ void benchmark(
 #elif defined(_SCHEDULE_DYNAMIC_)
 	#pragma omp parallel for schedule(dynamic) num_threads(nthreads) reduction(+:sum)
 #elif defined(_SCHEDULE_SRR_)
+	omp_set_workload(_tasks, ntasks);
+#elif defined(_SCHEDULE_WAS_)
 	omp_set_workload(_tasks, ntasks);
 	#pragma omp parallel for schedule(runtime) num_threads(nthreads) reduction(+:sum)
 #endif
@@ -180,7 +182,7 @@ void benchmark(
 	benchmark_dump(times, nthreads, "time");
 
 	/* House  keeping. */
-#if defined(_SCHEDULE_SRR_)
+#if defined(_SCHEDULE_SRR_) || defined(_SCHEDULE_WAS_)
 	free(_tasks);
 #endif
 }

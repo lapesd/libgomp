@@ -23,7 +23,7 @@ CFLAGS += -I include
 EXEC = benchmark
 
 # Builds everything.
-all: static dynamic guided srr
+all: static dynamic guided srr was
 
 # Builds static version.
 static:
@@ -40,6 +40,10 @@ guided:
 # Builds srr.
 srr:
 	$(CC) *.c $(CFLAGS) -D_SCHEDULE_SRR_ -o $(BINDIR)/$(EXEC).srr $(LIBS)
+
+# Builds was
+was:
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_WAS_ -o $(BINDIR)/$(EXEC).was $(LIBS)
 
 # Cleans compilation files.
 clean:
