@@ -117,7 +117,7 @@ parse_schedule (void)
   else if (strncasecmp (env, "was", 3) == 0)
     {
       gomp_global_icv.run_sched_var = GFS_WAS;
-      env += 6;
+      env += 3;
     }
   else if (strncasecmp (env, "auto", 4) == 0)
     {
