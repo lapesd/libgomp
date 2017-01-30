@@ -114,9 +114,9 @@ parse_schedule (void)
       env += 3;
     }
   /* END SRR */
-  else if (strncasecmp (env, "oracle", 6) == 0)
+  else if (strncasecmp (env, "was", 3) == 0)
     {
-      gomp_global_icv.run_sched_var = GFS_ORACLE;
+      gomp_global_icv.run_sched_var = GFS_WAS;
       env += 6;
     }
   else if (strncasecmp (env, "auto", 4) == 0)
@@ -1094,8 +1094,8 @@ handle_omp_display_env (unsigned long stacksize, int wait_policy)
     case GFS_SRR:
       fputs ("SRR", stderr);
       break;
-    case GFS_ORACLE:
-      fputs ("ORACLE", stderr);
+    case GFS_WAS:
+      fputs ("WAS", stderr);
       break;
     case GFS_STATIC:
       fputs ("STATIC", stderr);

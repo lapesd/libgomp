@@ -299,7 +299,7 @@ found:
 /* END SRR */
 
 bool
-gomp_iter_oracle_next (long *pstart, long *pend)
+gomp_iter_was_next (long *pstart, long *pend)
 {
   int i;                      /* Loop index.           */
   int tid;                    /* Thread ID.            */

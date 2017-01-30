@@ -32,12 +32,34 @@
 #include "libgomp.h"
 
 /*============================================================================*
- *                                  Balancer                                  *
+ * Workload Information                                                       *
  *============================================================================*/
 
-/* Workloads. */
-unsigned *__tasks; /* Tasks.           */
-unsigned __ntasks; /* Number of tasks. */
+/**
+ * @brief Tasks.
+ */
+unsigned *__tasks;
+
+/**
+ * @brief Number of tasks.
+ */
+unsigned __ntasks;
+
+/**
+ * @brief Sets the workload of the next parallel for loop.
+ *
+ * @param tasks  Load of iterations.
+ * @param ntasks Number of tasks.
+ */
+void omp_set_workload(unsigned *tasks, unsigned ntasks)
+{
+	__tasks = tasks;
+	__ntasks = ntasks;
+} 
+
+/*============================================================================*
+ * Workload Sorting                                                           *
+ *============================================================================*/
 
 #define N 128
 
@@ -122,10 +144,20 @@ unsigned *sort(unsigned *a, unsigned n)
 	return (map);
 } 
 
-/*
- * Balances workload.
+/*============================================================================*
+ * Smart Round-Robin Loop Scheduler                                           *
+ *============================================================================*/
+
+/**
+ * @brief Smart Round-Robin loop scheduler.
+ *
+ * @param tasks    Target tasks.
+ * @param ntasks   Number of tasks.
+ * @param nthreads Number of threads.
+ *
+ * @returns Iteration scheduling map.
  */
-static unsigned *balance(unsigned *tasks, unsigned ntasks, unsigned nthreads)
+static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads)
 {
 	unsigned i;        /* Loop index.        */
 	unsigned tid;      /* Current thread ID. */
@@ -176,14 +208,81 @@ static unsigned *balance(unsigned *tasks, unsigned ntasks, unsigned nthreads)
 	return (taskmap);
 }
 
-void omp_set_workload(unsigned *tasks, unsigned ntasks)
+/*============================================================================*
+ * Workload Aware Loop Scheduler                                              *
+ *============================================================================*/
+
+/**
+ * @brief Smart Round-Robin loop scheduler.
+ *
+ * @param tasks    Target tasks.
+ * @param ntasks   Number of tasks.
+ * @param nthreads Number of threads.
+ *
+ * @returns Iteration scheduling map.
+ */
+static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads)
 {
-	__tasks = tasks;
-	__ntasks = ntasks;
-} 
+	unsigned k;        /* Scheduling offset. */
+	unsigned tid;      /* Current thread ID. */
+	unsigned i, j;     /* Loop indexes.      */
+	unsigned *taskmap; /* Task map.          */
+	unsigned *sortmap; /* Sorting map.       */
+	unsigned *load;    /* Assigned load.     */
+	
+	/* Initialize scheduler data. */
+	taskmap = malloc(ntasks*sizeof(unsigned));
+	assert(taskmap != NULL);
+	load = calloc(ntasks, sizeof(unsigned));
+	assert(load != NULL);
+	
+	/* Sort tasks. */
+	sortmap = sort(tasks, ntasks);
+	
+	/* Assign tasks to threads. */
+	tid = 0;
+	k = ntasks%(2*nthreads);
+	for (i = k; i < k + (ntasks - k)/2; i++)
+	{
+		unsigned l = sortmap[i];
+		unsigned r = sortmap[ntasks - ((i - k) + 1)];
+
+		taskmap[l] = tid;
+		taskmap[r] = tid;
+
+		load[tid] += tasks[l] + tasks[r];
+		
+		/* Wrap around. */
+		tid = (tid + 1)%nthreads;
+	}
+
+	/* Assign remaining tasks. */
+	for (i = k - 1; i >= 0; i--)
+	{
+		unsigned leastoverload;
+
+		/* Find least overload thread. */
+		leastoverload = 0;
+		for (j = 1; j < nthreads; j++)
+		{
+			if (load[j] < load[leastoverload])
+				leastoverload = j;
+		}
+
+		taskmap[sortmap[i]] = leastoverload;
+
+		load[leastoverload] += tasks[sortmap[i]];
+	}
+	
+	/* House keeping. */
+	free(load);
+	free(sortmap);
+	
+	return (taskmap);
+}
 
 /*============================================================================*
- *                                                                            *
+ * Hacked LibGomp Routines                                                    *
  *============================================================================*/
 
 /* Initialize the given work share construct from the given arguments.  */
@@ -233,10 +332,7 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 #endif
     }
 
-  /*
-   * Setup internal GFS_SRR
-   * variables and balances workload.
-   */
+  /* Smart Round Robing scheduler. */
   else if (sched == GFS_SRR) {
     if (num_threads == 0)
     {
@@ -245,14 +341,14 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 	  num_threads = (team != NULL) ? team->nthreads : 1;
 	}
 	
-	ws->taskmap = balance(__tasks, __ntasks, num_threads);
+	ws->taskmap = srr_balance(__tasks, __ntasks, num_threads);
 	
 	ws->loop_start = start;
 	ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
   }
-  /* END SRR */
   
-  else if (sched == GFS_ORACLE) {
+  /* Workload Aware scheduler. */
+  else if (sched == GFS_WAS) {
     if (num_threads == 0)
     {
 	  struct gomp_thread *thr = gomp_thread ();
@@ -260,11 +356,7 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 	  num_threads = (team != NULL) ? team->nthreads : 1;
 	}
 	
-	
-	ws->taskmap = malloc(__ntasks*sizeof(unsigned));
-	assert(ws->taskmap != NULL);
-	memcpy(ws->taskmap, __tasks, __ntasks*sizeof(unsigned));
-	
+	ws->taskmap = was_balance(__tasks, __ntasks, num_threads);
 	
 	ws->loop_start = start;
 	ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
@@ -403,7 +495,7 @@ gomp_loop_srr_start (long start, long end, long incr, long chunk_size,
 /* END SRR */
 
 static bool
-gomp_loop_oracle_start (long start, long end, long incr, long chunk_size,
+gomp_loop_was_start (long start, long end, long incr, long chunk_size,
 		       long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
@@ -412,11 +504,11 @@ gomp_loop_oracle_start (long start, long end, long incr, long chunk_size,
   if (gomp_work_share_start (false))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_ORACLE, chunk_size, 0);
+		      GFS_WAS, chunk_size, 0);
       gomp_work_share_init_done ();
     }
 
-  ret = gomp_iter_oracle_next (istart, iend);
+  ret = gomp_iter_was_next (istart, iend);
 
   return ret;
 }
@@ -449,8 +541,8 @@ GOMP_loop_runtime_start (long start, long end, long incr,
     case GFS_SRR:
       return gomp_loop_srr_start (start, end, incr, icv->run_sched_modifier, istart, iend);
       /* END SRR */
-    case GFS_ORACLE:
-      return gomp_loop_oracle_start (start, end, incr, icv->run_sched_modifier, istart, iend);
+    case GFS_WAS:
+      return gomp_loop_was_start (start, end, incr, icv->run_sched_modifier, istart, iend);
 
     case GFS_AUTO:
       /* For now map to schedule(static), later on we could play with feedback
@@ -611,18 +703,16 @@ gomp_loop_guided_next (long *istart, long *iend)
   return ret;
 }
 
-/* BEGIN SRR: Triggers a call to gomp_iter_srr_next(). */
 static bool
 gomp_loop_srr_next (long *istart, long *iend)
 {
   return gomp_iter_srr_next (istart, iend);
 }
-/* END SRR */
 
 static bool
-gomp_loop_oracle_next (long *istart, long *iend)
+gomp_loop_was_next (long *istart, long *iend)
 {
-  return gomp_iter_oracle_next (istart, iend);
+  return gomp_iter_was_next (istart, iend);
 }
 
 static bool
@@ -649,8 +739,8 @@ GOMP_loop_runtime_next (long *istart, long *iend)
       return gomp_loop_guided_next (istart, iend);
     case GFS_SRR:
       return gomp_loop_srr_next (istart, iend);
-    case GFS_ORACLE:
-      return gomp_loop_oracle_next (istart, iend);
+    case GFS_WAS:
+      return gomp_loop_was_next (istart, iend);
     default:
       abort ();
     }

@@ -91,7 +91,7 @@ enum gomp_schedule_type
   /* BEGIN SRR */
   GFS_SRR,
   /* END SRR */
-  GFS_ORACLE,
+  GFS_WAS,
 
   GFS_AUTO
 };
@@ -569,7 +569,7 @@ extern bool gomp_iter_guided_next (long *, long *);
    iter.c file. */
 extern bool gomp_iter_srr_next (long *, long *);
 /* END SRR */
-extern bool gomp_iter_oracle_next (long *, long *);
+extern bool gomp_iter_was_next (long *, long *);
 #endif
 
 /* iter_ull.c */
