@@ -257,7 +257,7 @@ static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 	}
 
 	/* Assign remaining tasks. */
-	for (i = k - 1; i >= 0; i--)
+	for (i = k; i > 0; i--)
 	{
 		unsigned leastoverload;
 
@@ -269,9 +269,9 @@ static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 				leastoverload = j;
 		}
 
-		taskmap[sortmap[i]] = leastoverload;
+		taskmap[sortmap[i - 1]] = leastoverload;
 
-		load[leastoverload] += tasks[sortmap[i]];
+		load[leastoverload] += tasks[sortmap[i - 1]];
 	}
 	
 	/* House keeping. */
