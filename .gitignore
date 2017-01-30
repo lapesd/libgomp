@@ -11,3 +11,4 @@ contrib/share
 src/libgomp/libgomp/build/*
 data/*
 csv/*
+tags
