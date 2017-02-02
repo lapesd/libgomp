@@ -241,8 +241,9 @@ static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 	
 	/* Assign tasks to threads. */
 	tid = 0;
-	k = ntasks%(2*nthreads);
-	for (i = k; i < k + (ntasks - k)/2; i++)
+	k = ntasks%2;
+
+	for (i = k; i < k + (ntasks - k); i++)
 	{
 		unsigned l = sortmap[i];
 		unsigned r = sortmap[ntasks - ((i - k) + 1)];
