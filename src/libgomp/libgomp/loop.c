@@ -55,7 +55,7 @@ void omp_set_workload(unsigned *tasks, unsigned ntasks)
 {
 	__tasks = tasks;
 	__ntasks = ntasks;
-} 
+}
 
 /*============================================================================*
  * Workload Sorting                                                           *
@@ -75,7 +75,7 @@ static void insertion(unsigned *map, unsigned *a, unsigned n)
 {
 	unsigned t;    /* Temporary value. */
 	unsigned i, j; /* Loop indexes.    */
-	
+
 	/* Sort. */
 	for (i = 0; i < (n - 1); i++)
 	{
@@ -98,14 +98,14 @@ void quicksort(unsigned *map, unsigned *a, unsigned n)
 {
 	unsigned i, j;
 	unsigned p, t;
-    
+
     /* End recursion. */
 	if (n < N)
 	{
 		insertion(map, a, n);
 		return;
 	}
-    
+
 	/* Pivot stuff. */
 	p = a[n/2];
 	for (i = 0, j = n - 1; /* noop */ ; i++, j--)
@@ -119,11 +119,11 @@ void quicksort(unsigned *map, unsigned *a, unsigned n)
 		exch(a[i], a[j], t);
 		exch(map[i], map[j], t);
 	}
-    
+
 	quicksort(map, a, i);
 	quicksort(map, a + i, n - i);
 }
- 
+
 
 /*
  * Sorts an array of numbers.
@@ -132,7 +132,7 @@ unsigned *sort(unsigned *a, unsigned n)
 {
 	unsigned i;    /* Loop index.  */
 	unsigned *map; /* Sorting map. */
-	
+
 	/* Create map. */
 	map = malloc(n*sizeof(unsigned));
 	assert(map != NULL);
@@ -142,7 +142,7 @@ unsigned *sort(unsigned *a, unsigned n)
 	quicksort(map, a, n);
 
 	return (map);
-} 
+}
 
 /*============================================================================*
  * Smart Round-Robin Loop Scheduler                                           *
@@ -164,27 +164,27 @@ static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 	unsigned *taskmap; /* Task map.          */
 	unsigned *sortmap; /* Sorting map.       */
 	unsigned ndiv2;    /* ntasks/2           */
-	
+
 	/* Initialize scheduler data. */
 	tid = 0;
 	ndiv2 = ntasks >> 1;
 	taskmap = malloc(ntasks*sizeof(unsigned));
 	assert(taskmap != NULL);
-	
+
 	/* Sort tasks. */
 	sortmap = sort(tasks, ntasks);
-	
+
 	/* Assign tasks to threads. */
 	if (ntasks & 1)
 	{
 		taskmap[sortmap[0]] = tid;
-		
+
 		/* Balance workload. */
 		for (i = 1; i <= ndiv2; i++)
 		{
 			taskmap[sortmap[i]] = tid;
 			taskmap[sortmap[ntasks - i]] = tid;
-			
+
 			/* Wrap around. */
 			if ((++tid) == nthreads)
 				tid = 0;
@@ -196,15 +196,15 @@ static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 		{
 			taskmap[sortmap[i]] = tid;
 			taskmap[sortmap[ntasks - i - 1]] = tid;
-			
+
 			/* Wrap around. */
 			if ((++tid) == nthreads)
 				tid = 0;
 		}
 	}
-	
+
 	free(sortmap);
-	
+
 	return (taskmap);
 }
 
@@ -229,19 +229,19 @@ static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 	unsigned *taskmap; /* Task map.          */
 	unsigned *sortmap; /* Sorting map.       */
 	unsigned *load;    /* Assigned load.     */
-	
+
 	/* Initialize scheduler data. */
 	taskmap = malloc(ntasks*sizeof(unsigned));
 	assert(taskmap != NULL);
 	load = calloc(ntasks, sizeof(unsigned));
 	assert(load != NULL);
-	
+
 	/* Sort tasks. */
 	sortmap = sort(tasks, ntasks);
-	
+
 	/* Assign tasks to threads. */
 	tid = 0;
-	k = ntasks%2;
+	k = ntasks & 1;
 
 	for (i = k; i < k + (ntasks - k); i++)
 	{
@@ -252,7 +252,7 @@ static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 		taskmap[r] = tid;
 
 		load[tid] += tasks[l] + tasks[r];
-		
+
 		/* Wrap around. */
 		tid = (tid + 1)%nthreads;
 	}
@@ -274,11 +274,11 @@ static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 
 		load[leastoverload] += tasks[sortmap[i - 1]];
 	}
-	
+
 	/* House keeping. */
 	free(load);
 	free(sortmap);
-	
+
 	return (taskmap);
 }
 
@@ -299,78 +299,73 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 	    ? start : end;
   ws->incr = incr;
   ws->next = start;
-  if (sched == GFS_DYNAMIC)
-    {
-      ws->chunk_size *= incr;
+
+
+  switch (sched) {
+  case GFS_DYNAMIC:
+    ws->chunk_size *= incr;
 
 #ifdef HAVE_SYNC_BUILTINS
-      {
-	/* For dynamic scheduling prepare things to make each iteration
-	   faster.  */
-	struct gomp_thread *thr = gomp_thread ();
-	struct gomp_team *team = thr->ts.team;
-	long nthreads = team ? team->nthreads : 1;
+    {
+      /* For dynamic scheduling prepare things to make each iteration
+	 faster.  */
+      struct gomp_thread *thr = gomp_thread ();
+      struct gomp_team *team = thr->ts.team;
+      long nthreads = team ? team->nthreads : 1;
 
-	if (__builtin_expect (incr > 0, 1))
-	  {
-	    /* Cheap overflow protection.  */
-	    if (__builtin_expect ((nthreads | ws->chunk_size)
-				  >= 1UL << (sizeof (long)
-					     * __CHAR_BIT__ / 2 - 1), 0))
-	      ws->mode = 0;
-	    else
-	      ws->mode = ws->end < (LONG_MAX
-				    - (nthreads + 1) * ws->chunk_size);
-	  }
-	/* Cheap overflow protection.  */
-	else if (__builtin_expect ((nthreads | -ws->chunk_size)
-				   >= 1UL << (sizeof (long)
-					      * __CHAR_BIT__ / 2 - 1), 0))
-	  ws->mode = 0;
-	else
-	  ws->mode = ws->end > (nthreads + 1) * -ws->chunk_size - LONG_MAX;
-      }
-#endif
+      if (__builtin_expect (incr > 0, 1))
+	{
+	  /* Cheap overflow protection.  */
+	  if (__builtin_expect ((nthreads | ws->chunk_size)
+				>= 1UL << (sizeof (long)
+					   * __CHAR_BIT__ / 2 - 1), 0))
+	    ws->mode = 0;
+	  else
+	    ws->mode = ws->end < (LONG_MAX
+				  - (nthreads + 1) * ws->chunk_size);
+	}
+      /* Cheap overflow protection.  */
+      else if (__builtin_expect ((nthreads | -ws->chunk_size)
+				 >= 1UL << (sizeof (long)
+					    * __CHAR_BIT__ / 2 - 1), 0))
+	ws->mode = 0;
+      else
+	ws->mode = ws->end > (nthreads + 1) * -ws->chunk_size - LONG_MAX;
     }
+#endif
+    break;
 
-  /* Smart Round Robing scheduler. */
-  else if (sched == GFS_SRR) {
-    if (num_threads == 0)
+  case GFS_SRR:
+  case GFS_WAS:
     {
+      unsigned *(*balance)(unsigned *, unsigned, unsigned);
+      balance = (sched == GFS_SRR) ? srr_balance : was_balance;
+      if (num_threads == 0)
+	{
 	  struct gomp_thread *thr = gomp_thread ();
 	  struct gomp_team *team = thr->ts.team;
 	  num_threads = (team != NULL) ? team->nthreads : 1;
 	}
-	
-	ws->taskmap = srr_balance(__tasks, __ntasks, num_threads);
-	
-	ws->loop_start = start;
-	ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
-  }
-  
-  /* Workload Aware scheduler. */
-  else if (sched == GFS_WAS) {
-    if (num_threads == 0)
-    {
-	  struct gomp_thread *thr = gomp_thread ();
-	  struct gomp_team *team = thr->ts.team;
-	  num_threads = (team != NULL) ? team->nthreads : 1;
-	}
-	
-	ws->taskmap = was_balance(__tasks, __ntasks, num_threads);
-	
-	ws->loop_start = start;
-	ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
+
+      ws->taskmap = balance(__tasks, __ntasks, num_threads);
+
+      ws->loop_start = start;
+      ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
+    }
+    break;
+
+  default:
+    break;
   }
 }
 
 /* The *_start routines are called when first encountering a loop construct
-   that is not bound directly to a parallel construct.  The first thread 
+   that is not bound directly to a parallel construct.  The first thread
    that arrives will create the work-share construct; subsequent threads
    will see the construct exists and allocate work from it.
 
    START, END, INCR are the bounds of the loop; due to the restrictions of
-   OpenMP, these values must be the same in every thread.  This is not 
+   OpenMP, these values must be the same in every thread.  This is not
    verified (nor is it entirely verifiable, since START is not necessarily
    retained intact in the work-share data structure).  CHUNK_SIZE is the
    scheduling parameter; again this must be identical in all threads.
@@ -400,7 +395,7 @@ gomp_loop_profile_start(long start, long end, long incr, long chunk_size,
 
   t0.tick = 0;
 
-  return !gomp_iter_profile_next (istart, iend);  
+  return !gomp_iter_profile_next (istart, iend);
 }
 
 static bool
@@ -654,8 +649,8 @@ GOMP_loop_ordered_runtime_start (long start, long end, long incr,
     }
 }
 
-/* The *_next routines are called when the thread completes processing of 
-   the iteration block currently assigned to it.  If the work-share 
+/* The *_next routines are called when the thread completes processing of
+   the iteration block currently assigned to it.  If the work-share
    construct is bound directly to a parallel construct, then the iteration
    bounds may have been set up before the parallel.  In which case, this
    may be the first iteration for the thread.
@@ -810,7 +805,7 @@ bool
 GOMP_loop_ordered_runtime_next (long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
-  
+
   switch (thr->ts.work_share->sched)
     {
     case GFS_STATIC:
