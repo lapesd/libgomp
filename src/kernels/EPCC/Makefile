@@ -61,9 +61,9 @@ taskbench: $(TASKOBJS)
 	$(CC) -o taskbench $(LDFLAGS) $(OMPFLAG) $(TASKOBJS) $(CLOCKOBJS) $(LIBS) -lm 
 
 clean: 
-	-rm *.o syncbench schedbench arraybench_* taskbench
+	-rm -f *.o syncbench schedbench arraybench_* taskbench
 
 clean-all: clean 	
-	-rm OpenMPBench.* *.all
+	-rm -f OpenMPBench.* *.all
 
 

@@ -7,4 +7,4 @@ CC=gcc
 CFLAGS =  -O2 -lm -fopenmp -std=c99
 LDFLAGS = -O2 -lm
 CPP = /usr/bin/cpp
-LIBS = ../../libgomp/libgomp/build/.libs/libgomp.a -lpthread
+LIBS = -L ../../libgomp/libgomp/build/.libs -lpthread -lgomp
