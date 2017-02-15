@@ -128,20 +128,14 @@ void quicksort(unsigned *map, unsigned *a, unsigned n)
 /*
  * Sorts an array of numbers.
  */
-unsigned *sort(unsigned *a, unsigned n)
+void sort(unsigned *a, unsigned n, unsigned *map)
 {
-	unsigned i;    /* Loop index.  */
-	unsigned *map; /* Sorting map. */
+  unsigned i;    /* Loop index.  */
 
-	/* Create map. */
-	map = malloc(n*sizeof(unsigned));
-	assert(map != NULL);
-	for (i = 0; i < n; i++)
-		map[i] = i;
+  for (i = 0; i < n; i++)
+    map[i] = i;
 
-	quicksort(map, a, n);
-
-	return (map);
+  quicksort(map, a, n);
 }
 
 /*============================================================================*
@@ -162,7 +156,7 @@ static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 	unsigned i;        /* Loop index.        */
 	unsigned tid;      /* Current thread ID. */
 	unsigned *taskmap; /* Task map.          */
-	unsigned *sortmap; /* Sorting map.       */
+	unsigned sortmap[ntasks]; /* Sorting map.       */
 	unsigned ndiv2;    /* ntasks/2           */
 
 	/* Initialize scheduler data. */
@@ -172,7 +166,7 @@ static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 	assert(taskmap != NULL);
 
 	/* Sort tasks. */
-	sortmap = sort(tasks, ntasks);
+	sort(tasks, ntasks, sortmap);
 
 	/* Assign tasks to threads. */
 	if (ntasks & 1)
@@ -203,8 +197,6 @@ static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 		}
 	}
 
-	free(sortmap);
-
 	return (taskmap);
 }
 
@@ -227,17 +219,16 @@ static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 	unsigned tid;      /* Current thread ID. */
 	unsigned i, j;     /* Loop indexes.      */
 	unsigned *taskmap; /* Task map.          */
-	unsigned *sortmap; /* Sorting map.       */
-	unsigned *load;    /* Assigned load.     */
+	unsigned sortmap[ntasks]; /* Sorting map.       */
+	unsigned load[ntasks];    /* Assigned load.     */
 
 	/* Initialize scheduler data. */
 	taskmap = malloc(ntasks*sizeof(unsigned));
 	assert(taskmap != NULL);
-	load = calloc(ntasks, sizeof(unsigned));
-	assert(load != NULL);
+	memset(load, 0, ntasks * sizeof(unsigned));
 
 	/* Sort tasks. */
-	sortmap = sort(tasks, ntasks);
+	sort(tasks, ntasks, sortmap);
 
 	/* Assign tasks to threads. */
 	tid = 0;
@@ -274,10 +265,6 @@ static unsigned *was_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 
 		load[leastoverload] += tasks[sortmap[i - 1]];
 	}
-
-	/* House keeping. */
-	free(load);
-	free(sortmap);
 
 	return (taskmap);
 }
@@ -348,7 +335,6 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 	}
 
       ws->taskmap = balance(__tasks, __ntasks, num_threads);
-
       ws->loop_start = start;
       ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
     }
