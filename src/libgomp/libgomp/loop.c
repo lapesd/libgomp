@@ -61,7 +61,7 @@ void omp_set_workload(unsigned *tasks, unsigned ntasks)
  * Workload Sorting                                                           *
  *============================================================================*/
 
-#define N 128
+#define N 512
 
 /*
  * Exchange two numbers.
