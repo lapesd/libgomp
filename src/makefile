@@ -53,7 +53,7 @@ libgomp-srr:
 libgomp-adaptive:
 	mkdir -p libgomp-adaptive/libgomp/build ; \
 	cd libgomp-adaptive/libgomp/build ; \
-	CFLAGS="" LIBS="" PREFIX="" ../configure --disable-multilib ; \
+	CFLAGS="-Wno-sizeof-pointer-memaccess" LIBS="" PREFIX="" ../configure --disable-multilib ; \
 	$(MAKE)
 
 # Cleans SRR libgomp.

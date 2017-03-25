@@ -8,5 +8,6 @@ contrib/lib
 contrib/man
 contrib/share
 src/libgomp-srr/libgomp/build/*
+src/libgomp-adaptive/libgomp/build/*
 data/*
 csv/*

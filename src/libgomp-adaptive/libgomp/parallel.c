@@ -106,7 +106,6 @@ void
 GOMP_parallel_start (void (*fn) (void *), void *data, unsigned num_threads)
 {
   num_threads = gomp_resolve_num_threads (num_threads, 0);
-printf("[Parallel level:%i, numthreads:%i\n", omp_get_level(), num_threads);
   gomp_team_start (fn, data, num_threads, gomp_new_team (num_threads));
 }
 
