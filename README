@@ -1,21 +1,24 @@
-                                 LibGOMP
+                              LaPeSD LibGOMP
 
 ABOUT
 
 	This repository contains an enhanced implementation of LibGOMP, which
 	features the following extras:
 	
-		* The Smart Round Robin (SRR) loop scheduling strategy
+        * The Smart Round-Robin (SRR) loop scheduler
+
+		* The Bin Packing Logest Processing Time First (BIN+LPT) loop
+		  scheduler
 
 BUILDING
 
-	To build this project execute the following commands:
+	To build LaPeSD LibGOMP execut the following commands in the root
+	directory of the project:
 	
-		$ make libgomp      # Build the modified version of LibGOMP.
-		$ make              # Build software suite.
+		$ make # Build LaPESD LibGOMP
 
 LICENSE AND MAINTAINERS
 
 	This is an open source software that is under GPLV3 license and is
-	maintained by Pedro H. Penna. Any questions or suggestions send an email
-	to him: <pedrohenriquepenna@gmail.com>.
+	maintained by Pedro H. Penna. Any questions or suggestions send an
+	email to him: <pedrohenriquepenna@gmail.com>.
