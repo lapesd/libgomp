@@ -28,6 +28,7 @@ LIBS := $(OBJ) $(LIBS)
 
 # Phony list.
 .PHONY: benchmark
+.PHONY: libgomp-srr
 
 # Builds everything.
 all: benchmark
@@ -41,14 +42,14 @@ benchmark: $(OBJ)
 	$(CC) $< $(CFLAGS) -c -o $@
 
 # Builds libgomp.
-libgomp:
+libgomp-srr:
 	mkdir -p libgomp-srr/libgomp/build ; \
 	cd libgomp-srr/libgomp/build ; \
 	CFLAGS="" LIBS="" PREFIX="" ../configure --disable-multilib ; \
 	$(MAKE)
 
 # Cleans libgomp.
-libgomp-clean:
+libgomp-srr-clean:
 	cd libgomp-srr/libgomp/build ; \
 	$(MAKE) distclean ; \
 	cd .. ; \

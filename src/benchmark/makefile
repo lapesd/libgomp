@@ -26,20 +26,20 @@ EXEC = benchmark
 all: static dynamic guided srr
 
 # Builds static version.
-static:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_STATIC_ -o $(BINDIR)/$(EXEC).static $(LIBS)
+static: $(LIBGOMP_SRR)
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_STATIC_ -o $(BINDIR)/$(EXEC).static $(LIBS) $(LIBGOMP_SRR)
 
 # Builds dynamic version.
-dynamic:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_DYNAMIC_ -o $(BINDIR)/$(EXEC).dynamic $(LIBS)
+dynamic: $(LIBGOMP_SRR)
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_DYNAMIC_ -o $(BINDIR)/$(EXEC).dynamic $(LIBS) $(LIBGOMP_SRR)
 
 # Builds guided version.
-guided:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_GUIDED_ -o $(BINDIR)/$(EXEC).guided $(LIBS)
+guided: $(LIBGOMP_SRR)
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_GUIDED_ -o $(BINDIR)/$(EXEC).guided $(LIBS) $(LIBGOMP_SRR)
 
 # Builds srr.
-srr:
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_SRR_ -o $(BINDIR)/$(EXEC).srr $(LIBS)
+srr: $(LIBGOMP_SRR)
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_SRR_ -o $(BINDIR)/$(EXEC).srr $(LIBS) $(LIBGOMP_SRR)
 
 # Cleans compilation files.
 clean:

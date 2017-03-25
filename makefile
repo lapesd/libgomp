@@ -25,7 +25,8 @@ export LIBDIR     = $(CURDIR)/lib
 export SRCDIR     = $(CURDIR)/src
 
 # Libraries.
-export LIBS += $(SRCDIR)/libgomp-srr/libgomp/build/.libs/libgomp.a
+export LIBGOMP_SRR += $(SRCDIR)/libgomp-srr/libgomp/build/.libs/libgomp.a
+export LIBGOMP_ADAPTIVE += $(SRCDIR)/libgomp-adaptive/libgomp/build/.libs/libgomp.a
 export LIBS += -lm
 
 # Toolchain.
@@ -44,12 +45,12 @@ all:
 	cd $(SRCDIR) && $(MAKE) all
 
 # Builds libgomp.
-libgomp:
-	cd $(SRCDIR) && $(MAKE) libgomp
+libgomp-srr:
+	cd $(SRCDIR) && $(MAKE) libgomp-srr
 
 # Cleans libgomp.
-libgomp-clean:
-	cd $(SRCDIR) && $(MAKE) libgomp-clean
+libgomp-srr-clean:
+	cd $(SRCDIR) && $(MAKE) libgomp-srr-clean
 
 # Cleans compilation files.
 clean:
