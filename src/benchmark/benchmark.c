@@ -108,6 +108,8 @@ void benchmark(
 #elif defined(_SCHEDULE_SRR_)
 	omp_set_workload(_tasks, ntasks);
 	#pragma omp parallel for schedule(runtime) num_threads(nthreads) reduction(+:sum)
+#elif defined(_SCHEDULE_ADAPTIVE_)
+	#pragma omp parallel for schedule(runtime) num_threads(nthreads) reduction(+:sum)
 #endif
 	for (unsigned i = 0; i < ntasks; i++)
 	{

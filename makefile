@@ -25,8 +25,8 @@ export LIBDIR     = $(CURDIR)/lib
 export SRCDIR     = $(CURDIR)/src
 
 # Libraries.
-export LIBGOMP_SRR += $(SRCDIR)/libgomp-srr/libgomp/build/.libs/libgomp.a
-export LIBGOMP_ADAPTIVE += $(SRCDIR)/libgomp-adaptive/libgomp/build/.libs/libgomp.a
+export LIBGOMP_SRR = $(SRCDIR)/libgomp-srr/libgomp/build/.libs/libgomp.a
+export LIBGOMP_ADAPTIVE = $(SRCDIR)/libgomp-adaptive/libgomp/build/.libs/libgomp.a
 export LIBS += -lm
 
 # Toolchain.

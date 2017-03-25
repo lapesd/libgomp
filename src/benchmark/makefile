@@ -23,7 +23,7 @@ CFLAGS += -I include
 EXEC = benchmark
 
 # Builds everything.
-all: static dynamic guided srr
+all: static dynamic guided srr adaptive
 
 # Builds static version.
 static: $(LIBGOMP_SRR)
@@ -40,6 +40,10 @@ guided: $(LIBGOMP_SRR)
 # Builds srr.
 srr: $(LIBGOMP_SRR)
 	$(CC) *.c $(CFLAGS) -D_SCHEDULE_SRR_ -o $(BINDIR)/$(EXEC).srr $(LIBS) $(LIBGOMP_SRR)
+
+# Builds adaptive.
+adaptive: $(LIBGOMP_ADAPTIVE)
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_ADAPTIVE_ -o $(BINDIR)/$(EXEC).srr $(LIBS) $(LIBGOMP_ADAPTIVE) -lnuma
 
 # Cleans compilation files.
 clean:
