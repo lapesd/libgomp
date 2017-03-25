@@ -43,7 +43,7 @@ srr: $(LIBGOMP_SRR)
 
 # Builds adaptive.
 adaptive: $(LIBGOMP_ADAPTIVE)
-	$(CC) *.c $(CFLAGS) -D_SCHEDULE_ADAPTIVE_ -o $(BINDIR)/$(EXEC).srr $(LIBS) $(LIBGOMP_ADAPTIVE) -lnuma
+	$(CC) *.c $(CFLAGS) -D_SCHEDULE_ADAPTIVE_ -o $(BINDIR)/$(EXEC).adaptive $(LIBS) $(LIBGOMP_ADAPTIVE) -lnuma
 
 # Cleans compilation files.
 clean:
