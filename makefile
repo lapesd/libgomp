@@ -48,9 +48,17 @@ all:
 libgomp-srr:
 	cd $(SRCDIR) && $(MAKE) libgomp-srr
 
+# Builds libgomp.
+libgomp-adaptive:
+	cd $(SRCDIR) && $(MAKE) libgomp-adaptive
+
 # Cleans libgomp.
 libgomp-srr-clean:
 	cd $(SRCDIR) && $(MAKE) libgomp-srr-clean
+
+# Cleans libgomp.
+libgomp-adaptive-clean:
+	cd $(SRCDIR) && $(MAKE) libgomp-adaptive-clean
 
 # Cleans compilation files.
 clean:

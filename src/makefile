@@ -29,6 +29,7 @@ LIBS := $(OBJ) $(LIBS)
 # Phony list.
 .PHONY: benchmark
 .PHONY: libgomp-srr
+.PHONY: libgomp-adaptive
 
 # Builds everything.
 all: benchmark
@@ -41,19 +42,33 @@ benchmark: $(OBJ)
 %.o: %.c
 	$(CC) $< $(CFLAGS) -c -o $@
 
-# Builds libgomp.
+# Builds SRR libgomp.
 libgomp-srr:
 	mkdir -p libgomp-srr/libgomp/build ; \
 	cd libgomp-srr/libgomp/build ; \
 	CFLAGS="" LIBS="" PREFIX="" ../configure --disable-multilib ; \
 	$(MAKE)
 
-# Cleans libgomp.
+# Builds ADAPTIVE libgomp.
+libgomp-adaptive:
+	mkdir -p libgomp-adaptive/libgomp/build ; \
+	cd libgomp-adaptive/libgomp/build ; \
+	CFLAGS="" LIBS="" PREFIX="" ../configure --disable-multilib ; \
+	$(MAKE)
+
+# Cleans SRR libgomp.
 libgomp-srr-clean:
 	cd libgomp-srr/libgomp/build ; \
 	$(MAKE) distclean ; \
 	cd .. ; \
 	rm -rf libgomp-srr/libgomp/build
+	
+# Cleans ADAPTIVE libgomp.
+libgomp-adaptive-clean:
+	cd libgomp-adaptive/libgomp/build ; \
+	$(MAKE) distclean ; \
+	cd .. ; \
+	rm -rf libgomp-adaptive/libgomp/build
 	
 # Cleans everything.
 clean:
