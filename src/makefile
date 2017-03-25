@@ -28,25 +28,15 @@ LIBS := $(OBJ) $(LIBS)
 
 # Phony list.
 .PHONY: benchmark
-.PHONY: generators
-.PHONY: kernels
 .PHONY: libgomp
 
 # Builds everything.
-all: benchmark kernels generators
+all: benchmark
 
 # Builds benchmark.
 benchmark: $(OBJ)
 	cd benchmark && $(MAKE) all
 
-# Builds kernels.
-kernels: $(OBJ)
-	cd kernels && $(MAKE) all
-
-# Builds input data generators.
-generators: $(OBJ)
-	cd generators && $(MAKE) all
-	
 # Builds common objects.
 %.o: %.c
 	$(CC) $< $(CFLAGS) -c -o $@
@@ -69,5 +59,3 @@ libgomp-clean:
 clean:
 	rm -f $(OBJ)
 	cd benchmark && $(MAKE) clean
-	cd generators && $(MAKE) clean
-	cd kernels && $(MAKE) clean
