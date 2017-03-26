@@ -84,6 +84,7 @@ enum gomp_schedule_type
   GFS_DYNAMIC,
   GFS_GUIDED,
   GFS_BINLPT,
+  GFS_HSS,
   GFS_SRR,
   GFS_AUTO
 };
@@ -176,6 +177,12 @@ struct gomp_work_share
   long loop_start;
   unsigned *taskmap;
   unsigned *thread_start;
+
+  /*
+   * Used in the HSS scheduler.
+   */
+  gomp_mutex_t hss_lock;
+  unsigned wremaining;
 
   union {
     /* Link to gomp_work_share struct for next work sharing construct
@@ -556,6 +563,7 @@ extern bool gomp_iter_guided_next_locked (long *, long *);
 extern bool gomp_iter_dynamic_next (long *, long *);
 extern bool gomp_iter_guided_next (long *, long *);
 extern bool gomp_iter_binlpt_next (long *, long *);
+extern bool gomp_iter_hss_next (long *, long *);
 extern bool gomp_iter_srr_next (long *, long *);
 #endif
 

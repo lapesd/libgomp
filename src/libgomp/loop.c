@@ -416,6 +416,16 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 #endif
     break;
 
+  case GFS_HSS:
+	{
+      gomp_mutex_init (&ws->hss_lock);
+      ws->loop_start = start;
+	  ws->wremaining = 0;
+	  for (unsigned i = 0; i < __ntasks; i++)
+		  ws->wremaining += __tasks[i];
+	}
+	break;
+
   case GFS_BINLPT:
 	{
 	  __nchunks = chunk_size;
@@ -531,6 +541,25 @@ gomp_loop_binlpt_start (long start, long end, long incr, long chunk_size,
 }
 
 static bool
+gomp_loop_hss_start (long start, long end, long incr, long chunk_size,
+		       long *istart, long *iend)
+{
+  struct gomp_thread *thr = gomp_thread ();
+  bool ret;
+
+  if (gomp_work_share_start (false))
+    {
+      gomp_loop_init (thr->ts.work_share, start, end, incr,
+		      GFS_HSS, chunk_size, 0);
+      gomp_work_share_init_done ();
+    }
+
+  ret = gomp_iter_hss_next (istart, iend);
+
+  return ret;
+}
+
+static bool
 gomp_loop_srr_start (long start, long end, long incr, long chunk_size,
 		       long *istart, long *iend)
 {
@@ -568,6 +597,8 @@ GOMP_loop_runtime_start (long start, long end, long incr,
 
     case GFS_BINLPT:
       return gomp_loop_binlpt_start (start, end, incr, icv->run_sched_modifier, istart, iend);
+    case GFS_HSS:
+      return gomp_loop_hss_start (start, end, incr, icv->run_sched_modifier, istart, iend);
     case GFS_SRR:
       return gomp_loop_srr_start (start, end, incr, icv->run_sched_modifier, istart, iend);
 
@@ -735,6 +766,11 @@ gomp_loop_binlpt_next (long *istart, long *iend)
 {
   return gomp_iter_binlpt_next (istart, iend);
 }
+static bool
+gomp_loop_hss_next (long *istart, long *iend)
+{
+  return gomp_iter_hss_next (istart, iend);
+}
 
 static bool
 gomp_loop_srr_next (long *istart, long *iend)
@@ -758,6 +794,8 @@ GOMP_loop_runtime_next (long *istart, long *iend)
       return gomp_loop_guided_next (istart, iend);
     case GFS_BINLPT:
       return gomp_loop_binlpt_next (istart, iend);
+    case GFS_HSS:
+      return gomp_loop_hss_next (istart, iend);
     case GFS_SRR:
       return gomp_loop_srr_next (istart, iend);
     default:

@@ -111,6 +111,11 @@ parse_schedule (void)
       gomp_global_icv.run_sched_var = GFS_BINLPT;
       env += 6;
     }
+  else if (strncasecmp (env, "hss", 3) == 0)
+    {
+      gomp_global_icv.run_sched_var = GFS_HSS;
+      env += 3;
+    }
   else if (strncasecmp (env, "srr", 3) == 0)
     {
       gomp_global_icv.run_sched_var = GFS_SRR;
@@ -1083,6 +1088,9 @@ handle_omp_display_env (unsigned long stacksize, int wait_policy)
       break;
     case GFS_BINLPT:
       fputs ("BINLPT", stderr);
+      break;
+    case GFS_HSS:
+      fputs ("HSS", stderr);
       break;
     case GFS_SRR:
       fputs ("SRR", stderr);

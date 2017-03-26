@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <math.h>
 #include <assert.h>
 
 
@@ -255,6 +256,69 @@ gomp_iter_dynamic_next (long *pstart, long *pend)
 
 /* Workloads. */
 extern unsigned __ntasks; /* Number of tasks. */
+extern unsigned *__tasks;  /* Tasks.           */
+
+bool
+gomp_iter_hss_next (long *pstart, long *pend)
+{
+  unsigned k;                 /* Number of scheduled iterations. */
+  long chunksize;             /* Chunksize.                      */
+  unsigned chunkweight;       /* Chunk weight.                   */
+  struct gomp_thread *thr;    /* Thread.                         */
+  struct gomp_team *team;     /* Tead of threads.                */
+  struct gomp_work_share *ws; /* Work-Share construct.           */
+  int nthreads;               /* Number of threads.              */
+  
+  /* Get scheduler data.. */
+  thr = gomp_thread();
+  team = thr->ts.team;
+  ws = thr->ts.work_share;
+  nthreads = (team != NULL) ? team->nthreads : 1;
+
+  gomp_mutex_lock(&ws->hss_lock);
+
+  /* Comput chunksize. */
+  chunksize = ceil(ws->wremaining/(1.5*nthreads));
+  if (chunksize < ws->chunk_size)
+	  chunksize = ws->chunk_size;
+
+	/* Schedule iterations. */
+	chunkweight = 0; k = 0;
+	for (unsigned i = ws->loop_start; i < __ntasks; i++)
+	{
+		unsigned w1;
+		unsigned w2;
+
+		k++;
+		chunkweight += __tasks[i];
+
+		w1 = chunkweight;
+		w2 = ((i + 1) < __ntasks) ? chunkweight + __tasks[i + 1] : 0;
+
+		/* Keep scheduling. */
+		if (w2 <= chunksize)
+			continue;
+
+		/* Best fit. */
+		if (w1 >= chunksize)
+			break;
+
+		/* Best range approximation. */
+		if ((w2 - chunksize) > (chunksize - w1))
+			break;
+	}
+
+  *pstart = ws->loop_start;
+  *pend = ws->loop_start + k + 1;
+
+  /* Update scheduler data. */
+  ws->loop_start += k;
+  ws->wremaining -= chunkweight;
+
+  gomp_mutex_unlock(&ws->hss_lock);
+
+  return ((*pstart == __ntasks) ? false : true);
+}
 
 bool
 gomp_iter_binlpt_next (long *pstart, long *pend)
