@@ -8,7 +8,7 @@ contrib/include
 contrib/lib
 contrib/man
 contrib/share
-src/libgomp/libgomp/build/*
+src/libgomp/build/*
 data/*
 csv/*
 tags
