@@ -17,7 +17,7 @@ extern void dump(const double *, int, const char *);
 #define ALPHA 0.5
 #define ALPHA2 (ALPHA*ALPHA)
 
-#define NPARTICLES 100
+#define NPARTICLES 75
 
 #define NITERATIONS 1
 
