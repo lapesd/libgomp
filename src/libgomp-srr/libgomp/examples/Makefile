@@ -1,8 +1,7 @@
 CC=gcc
 CFLAGS=-rdynamic -g -fopenmp
 
-all:
-	$(CC) $(CFLAGS) pedro-test.c -o pedro-test
+all: pedro-test testloop
 
 clean:
-	rm -f *.o pedro-test
+	rm -f *.o pedro-test testloop
