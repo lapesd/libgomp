@@ -30,12 +30,13 @@ LIBS := $(OBJ) $(LIBS)
 .PHONY: benchmark
 .PHONY: libgomp-srr
 .PHONY: libgomp-adaptive
+.PHONY: lavamd
 
 # Builds everything.
-all: benchmark
+all: benchmark lavamd
 
 # Builds benchmark.
-benchmark: $(OBJ)
+benchmark: $(OBJ) $(LIBGOMP_SRR) $(LIBGOMP_ADAPTIVE)
 	cd benchmark && $(MAKE) all
 
 # Builds common objects.
@@ -69,8 +70,13 @@ libgomp-adaptive-clean:
 	$(MAKE) distclean ; \
 	cd .. ; \
 	rm -rf libgomp-adaptive/libgomp/build
-	
+
+# LavaMD.
+lavamd: $(LIBGOMP_SRR)
+	cd lavamd && $(MAKE) all
+
 # Cleans everything.
 clean:
 	rm -f $(OBJ)
 	cd benchmark && $(MAKE) clean
+	cd lavamd && $(MAKE) clean
