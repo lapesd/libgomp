@@ -272,7 +272,7 @@ gomp_iter_srr_next (long *pstart, long *pend)
   int start;                  /* Start of search.      */
   struct gomp_thread *thr;    /* Thread.               */
   struct gomp_work_share *ws; /* Work-Share construct. */
-  
+
   thr = gomp_thread();
   ws = thr->ts.work_share;
   tid = omp_get_thread_num();
@@ -298,6 +298,245 @@ found:
 
 /* END SRR */
 
+#include <stdio.h>
+
+#if defined(LIBGOMP_USE_ADAPTIVE)
+
+#define gomp_loop_adaptive_is_finished(ws) (ws->nb_iterations_left == 0)
+
+#if !defined(LIBGOMP_USE_PWS_STRICT)
+static struct gomp_ws_adaptive_chunk *
+gomp_loop_adaptive_random_pick_victim (struct gomp_thread* thr)
+{
+  long victim_id;
+  long nthreads = thr->ts.team->nthreads;
+  if (nthreads ==1)  /* means myself ! */
+    return 0;
+  do {
+    victim_id = rand_r (&thr->seed) % nthreads;
+  } while (victim_id == thr->ts.team_id);
+
+  return &thr->ts.work_share->adaptive_chunks[victim_id];
+}
+#endif
+
+
+#if defined(LIBGOMP_USE_NUMA)
+static struct gomp_ws_adaptive_chunk *
+gomp_loop_adaptive_numa_pick_victim (struct gomp_thread* thr)
+{
+  struct gomp_thread_pool *pool = thr->thread_pool;
+
+  long victim_id;
+  long nthreads = pool->numa_info[thr->numaid].size;
+  if (nthreads ==1)  /* means myself ! */
+    return 0;
+  do {
+    victim_id = rand_r (&thr->seed) % nthreads;
+  } while (victim_id == thr->index_numanode);
+
+  /* convert local index in numanode to team index */
+  victim_id = pool->numa_info[thr->numaid].team_ids[victim_id];
+  return &thr->ts.work_share->adaptive_chunks[victim_id];
+}
+#endif
+
+
+#define gomp_compiler_barrier() __sync_synchronize()
+
+static inline bool
+gomp_iter_adaptive_try_local_work (struct gomp_ws_adaptive_chunk *local_queue,
+				   long chunk_size,
+				   long *pstart,
+				   long *pend)
+{
+  bool ret = false;
+
+  long begin;
+
+  begin = local_queue->begin;
+  begin += chunk_size;
+  local_queue->begin = begin;
+  gomp_compiler_barrier();
+
+  if (begin < local_queue->end) {
+    *pstart = begin - chunk_size;
+    *pend = begin;
+
+    local_queue->nb_exec += chunk_size;
+
+    ret = true;
+  } else {
+    long size;
+    begin -= chunk_size;
+    local_queue->begin = begin;
+    kaapi_atomic_lock (&local_queue->lock);
+    size = local_queue->end - begin;
+    if (size > 0) {
+      if (size > chunk_size)
+	size = chunk_size;
+      begin += size;
+      local_queue->begin = begin;
+    }
+
+    kaapi_atomic_unlock (&local_queue->lock);
+    if (size > 0) {
+      *pstart = begin - size;
+      *pend = begin;
+
+      local_queue->nb_exec += size;
+
+      ret = true;
+    }
+  }
+
+  return ret;
+}
+
+static inline bool
+gomp_iter_adaptive_steal (struct gomp_thread *thr,
+                          struct gomp_ws_adaptive_chunk *local_queue,
+			  long chunk_size,
+			  long *pstart,
+			  long *pend)
+{
+
+  struct gomp_ws_adaptive_chunk* victim_queue;
+
+#if defined(LIBGOMP_USE_NUMA)
+  struct gomp_work_share* ws = thr->ts.work_share;
+  struct gomp_thread_pool *pool = thr->thread_pool;
+  long nthreads = pool->numa_info[thr->numaid].size;
+  int i;
+  for (i=0; i< (1+nthreads/2); ++i)
+  {
+    victim_queue = gomp_loop_adaptive_numa_pick_victim (thr);
+    if ((victim_queue !=0) && (victim_queue->end > victim_queue->begin))
+      goto do_steal;
+  }
+  if (gomp_loop_adaptive_is_finished (ws))
+    return false;
+#if defined(LIBGOMP_USE_PWS_STRICT)
+  return false;
+#else
+  victim_queue = gomp_loop_adaptive_random_pick_victim (thr);
+#endif
+
+do_steal:
+#else
+  victim_queue = gomp_loop_adaptive_random_pick_victim (thr);
+#endif
+  if (victim_queue ==0)
+    return false;
+
+  long end = victim_queue->end;
+  long size = (victim_queue->end - victim_queue->begin) / 2;
+  long local_size = chunk_size;
+
+  /* return without locking... */
+  if (size <= 0)
+    return false;
+
+  kaapi_atomic_lock (&victim_queue->lock);
+  end = victim_queue->end;
+  //To not read again size... size = (victim_queue->end - victim_queue->begin) / 2;
+
+  end -= size;
+  victim_queue->end = end;
+  gomp_compiler_barrier();
+  if (end < victim_queue->begin)
+  {
+    victim_queue->end = end + size;
+    kaapi_atomic_unlock (&victim_queue->lock);
+    return false;
+  }
+
+  *pstart = end;
+  if (size <= local_size) {
+    local_size = size;
+  }
+  *pend = end + local_size;
+
+  kaapi_atomic_unlock (&victim_queue->lock);
+
+  kaapi_atomic_lock (&local_queue->lock);
+
+  local_queue->begin = *pend;
+  local_queue->end = end + size;
+
+  kaapi_atomic_unlock (&local_queue->lock);
+
+  local_queue->nb_exec += (*pend - *pstart);
+
+  return true;
+}
+
+
+
+extern void
+gomp_loop_adaptive_init_worker (
+  struct gomp_work_share *ws,
+  struct gomp_thread *thr,
+  long start, long end, long chunk_size
+);
+
+bool
+gomp_iter_adaptive_next (long *pstart, long *pend)
+{
+  struct gomp_thread *thr = gomp_thread ();
+  struct gomp_work_share* ws = thr->ts.work_share;
+  struct gomp_ws_adaptive_chunk *local_chunk = &ws->adaptive_chunks[thr->ts.team_id];
+
+  if (!local_chunk->is_init)
+    gomp_loop_adaptive_init_worker( ws, thr, ws->start_t0, ws->end,  ws->incr );
+
+  long chunk_size = ws->chunk_size;
+
+  /* Try local work first. */
+  if (gomp_iter_adaptive_try_local_work (local_chunk, chunk_size, pstart, pend) == true)
+  {
+    //printf("Return: [%li,%li)\n", *pstart, *pend);
+    goto label_return_true;
+  }
+
+#if 0 // STEAL / NO STEAL for IWOMP 2013, EPCC
+
+  /* Decr the iteration left counter, return false if == 0 */
+  long retval = __sync_sub_and_fetch(&ws->nb_iterations_left, local_chunk->nb_exec);
+  local_chunk->nb_exec = 0;
+//printf("%i  nb_exec:%li  nb_left:%li\n", thr->ts.team_id, local_chunk->nb_exec, retval );
+  if (retval ==0)
+    goto label_return_false;
+
+  /* Steal work if idle. */
+  while (!gomp_loop_adaptive_is_finished (ws))
+  {
+    int i;
+    for (i=0; i<1; ++i)
+    {
+      if (gomp_iter_adaptive_steal (thr, local_chunk, chunk_size, pstart, pend) == true)
+      {
+#if defined(LIBGOMP_PROFILE_LOOP)
+        ++PF(thr)->stealok;
+#endif
+        goto label_return_true;
+      }
+#if defined(LIBGOMP_PROFILE_LOOP)
+      ++PF(thr)->stealbad;
+#endif
+    }
+  }
+
+label_return_false:
+#endif // to comment steal process
+
+  return false;
+
+label_return_true:
+  return true;
+}
+#endif // #if defined(LIBGOMP_USE_ADAPTIVE)
+
 bool
 gomp_iter_oracle_next (long *pstart, long *pend)
 {
@@ -306,7 +545,7 @@ gomp_iter_oracle_next (long *pstart, long *pend)
   int start;                  /* Start of search.      */
   struct gomp_thread *thr;    /* Thread.               */
   struct gomp_work_share *ws; /* Work-Share construct. */
-  
+
   thr = gomp_thread();
   ws = thr->ts.work_share;
   tid = omp_get_thread_num();
@@ -337,7 +576,7 @@ int gomp_iter_profile_next(long *pstart, long *pend)
   if (profile_loop == 1) {
     _GET_TICK(t1);
   }
-  
+
   struct gomp_thread *thr = gomp_thread ();
   struct gomp_work_share *ws = thr->ts.work_share;
 
@@ -348,7 +587,7 @@ int gomp_iter_profile_next(long *pstart, long *pend)
     if (t0.tick != 0) {
       fprintf(stderr,
 	      "%li %" PRIu64 "\n",
-	      *pstart - ws->incr, 
+	      *pstart - ws->incr,
 	      t1.tick - t0.tick);
     }
     if (ws->next - ws->incr == ws->end) {

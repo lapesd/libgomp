@@ -46,7 +46,7 @@ benchmark: $(OBJ)
 libgomp-srr:
 	mkdir -p libgomp-srr/libgomp/build ; \
 	cd libgomp-srr/libgomp/build ; \
-	CFLAGS="" LIBS="" PREFIX="" ../configure --disable-multilib ; \
+	CFLAGS="-DLIBGOMP_USE_ADAPTIVE=1 -DLIBGOMP_USE_NUMA=1 -DLIBGOMP_USE_PWS_STRICT=0" LIBS="" PREFIX="" ../configure --disable-multilib ; \
 	$(MAKE)
 
 # Builds ADAPTIVE libgomp.

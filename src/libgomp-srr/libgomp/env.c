@@ -61,7 +61,10 @@ struct gomp_task_icv gomp_global_icv = {
   .dyn_var = false,
   .nest_var = false,
   .bind_var = omp_proc_bind_false,
-  .target_data = NULL
+  .target_data = NULL,
+#if defined(LIBGOMP_USE_ADAPTIVE) && defined(LIBGOMP_USE_NUMA)
+  .attr_distribute = false
+#endif
 };
 
 unsigned long gomp_max_active_levels_var = INT_MAX;
@@ -114,6 +117,14 @@ parse_schedule (void)
       env += 3;
     }
   /* END SRR */
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  else if (strncasecmp (env, "adaptive", 8) == 0)
+    {
+      gomp_global_icv.run_sched_var = GFS_ADAPTIVE;
+      env += 8;
+    }
+#endif
+
   else if (strncasecmp (env, "oracle", 6) == 0)
     {
       gomp_global_icv.run_sched_var = GFS_ORACLE;
@@ -1093,6 +1104,9 @@ handle_omp_display_env (unsigned long stacksize, int wait_policy)
       break;
     case GFS_SRR:
       fputs ("SRR", stderr);
+      break;
+    case GFS_ADAPTIVE:
+      fputs ("ADAPTIVE", stderr);
       break;
     case GFS_ORACLE:
       fputs ("ORACLE", stderr);

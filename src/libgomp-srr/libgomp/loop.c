@@ -31,6 +31,13 @@
 #include <string.h>
 #include "libgomp.h"
 
+#if defined(LIBGOMP_USE_ADAPTIVE)
+static void gomp_loop_adaptive_init_master(struct gomp_work_share *ws,
+                                           long start,
+                                           long end,
+                                           long chunk_size);
+#endif
+
 /*============================================================================*
  *                                  Balancer                                  *
  *============================================================================*/
@@ -53,7 +60,7 @@ static void insertion(unsigned *map, unsigned *a, unsigned n)
 {
 	unsigned t;    /* Temporary value. */
 	unsigned i, j; /* Loop indexes.    */
-	
+
 	/* Sort. */
 	for (i = 0; i < (n - 1); i++)
 	{
@@ -76,14 +83,14 @@ void quicksort(unsigned *map, unsigned *a, unsigned n)
 {
 	unsigned i, j;
 	unsigned p, t;
-    
+
     /* End recursion. */
 	if (n < N)
 	{
 		insertion(map, a, n);
 		return;
 	}
-    
+
 	/* Pivot stuff. */
 	p = a[n/2];
 	for (i = 0, j = n - 1; /* noop */ ; i++, j--)
@@ -97,11 +104,11 @@ void quicksort(unsigned *map, unsigned *a, unsigned n)
 		exch(a[i], a[j], t);
 		exch(map[i], map[j], t);
 	}
-    
+
 	quicksort(map, a, i);
 	quicksort(map, a + i, n - i);
 }
- 
+
 
 /*
  * Sorts an array of numbers.
@@ -110,7 +117,7 @@ unsigned *sort(unsigned *a, unsigned n)
 {
 	unsigned i;    /* Loop index.  */
 	unsigned *map; /* Sorting map. */
-	
+
 	/* Create map. */
 	map = malloc(n*sizeof(unsigned));
 	assert(map != NULL);
@@ -120,7 +127,7 @@ unsigned *sort(unsigned *a, unsigned n)
 	quicksort(map, a, n);
 
 	return (map);
-} 
+}
 
 /*
  * Balances workload.
@@ -132,27 +139,27 @@ static unsigned *balance(unsigned *tasks, unsigned ntasks, unsigned nthreads)
 	unsigned *taskmap; /* Task map.          */
 	unsigned *sortmap; /* Sorting map.       */
 	unsigned ndiv2;    /* ntasks/2           */
-	
+
 	/* Initialize scheduler data. */
 	tid = 0;
 	ndiv2 = ntasks >> 1;
 	taskmap = malloc(ntasks*sizeof(unsigned));
 	assert(taskmap != NULL);
-	
+
 	/* Sort tasks. */
 	sortmap = sort(tasks, ntasks);
-	
+
 	/* Assign tasks to threads. */
 	if (ntasks & 1)
 	{
 		taskmap[sortmap[0]] = tid;
-		
+
 		/* Balance workload. */
 		for (i = 1; i <= ndiv2; i++)
 		{
 			taskmap[sortmap[i]] = tid;
 			taskmap[sortmap[ntasks - i]] = tid;
-			
+
 			/* Wrap around. */
 			if ((++tid) == nthreads)
 				tid = 0;
@@ -164,15 +171,15 @@ static unsigned *balance(unsigned *tasks, unsigned ntasks, unsigned nthreads)
 		{
 			taskmap[sortmap[i]] = tid;
 			taskmap[sortmap[ntasks - i - 1]] = tid;
-			
+
 			/* Wrap around. */
 			if ((++tid) == nthreads)
 				tid = 0;
 		}
 	}
-	
+
 	free(sortmap);
-	
+
 	return (taskmap);
 }
 
@@ -180,7 +187,7 @@ void omp_set_workload(unsigned *tasks, unsigned ntasks)
 {
 	__tasks = tasks;
 	__ntasks = ntasks;
-} 
+}
 
 /*============================================================================*
  *                                                                            *
@@ -199,6 +206,10 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 	    ? start : end;
   ws->incr = incr;
   ws->next = start;
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  ws->start_t0 = start;
+#endif
+
   if (sched == GFS_DYNAMIC)
     {
       ws->chunk_size *= incr;
@@ -244,14 +255,14 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 	  struct gomp_team *team = thr->ts.team;
 	  num_threads = (team != NULL) ? team->nthreads : 1;
 	}
-	
+
 	ws->taskmap = balance(__tasks, __ntasks, num_threads);
-	
+
 	ws->loop_start = start;
 	ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
   }
   /* END SRR */
-  
+
   else if (sched == GFS_ORACLE) {
     if (num_threads == 0)
     {
@@ -259,25 +270,31 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 	  struct gomp_team *team = thr->ts.team;
 	  num_threads = (team != NULL) ? team->nthreads : 1;
 	}
-	
-	
+
+
 	ws->taskmap = malloc(__ntasks*sizeof(unsigned));
 	assert(ws->taskmap != NULL);
 	memcpy(ws->taskmap, __tasks, __ntasks*sizeof(unsigned));
-	
-	
+
+
 	ws->loop_start = start;
 	ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
   }
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  if (sched == GFS_ADAPTIVE)
+  {
+    gomp_loop_adaptive_init_master(ws, start, end, chunk_size);
+  }
+#endif
 }
 
 /* The *_start routines are called when first encountering a loop construct
-   that is not bound directly to a parallel construct.  The first thread 
+   that is not bound directly to a parallel construct.  The first thread
    that arrives will create the work-share construct; subsequent threads
    will see the construct exists and allocate work from it.
 
    START, END, INCR are the bounds of the loop; due to the restrictions of
-   OpenMP, these values must be the same in every thread.  This is not 
+   OpenMP, these values must be the same in every thread.  This is not
    verified (nor is it entirely verifiable, since START is not necessarily
    retained intact in the work-share data structure).  CHUNK_SIZE is the
    scheduling parameter; again this must be identical in all threads.
@@ -286,6 +303,126 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
    *ISTART and *IEND are filled with the bounds of the iteration block
    allocated to this thread.  Returns false if all work was assigned to
    other threads prior to this thread's arrival.  */
+
+
+   #if defined(LIBGOMP_USE_ADAPTIVE)
+
+   static void
+   gomp_loop_adaptive_init_master (struct gomp_work_share *ws, long start, long end, long chunk_size)
+   {
+     struct gomp_thread *thr = gomp_thread ();
+     struct gomp_team *team = thr->ts.team;
+     long i, nthreads = team ? team->nthreads : 1;
+
+     ws->nb_iterations_left = end - start;
+
+     for (i=0; i<nthreads; ++i)
+     {
+       struct gomp_ws_adaptive_chunk *ws_chunk = &ws->adaptive_chunks[i];
+       ws_chunk->is_init = false;
+     }
+    //printf("------- Master Thread: %li / #:%li ws:%p coreid: %i -> [%li, %li)\n", i, nthreads, (void*)ws, thr->coreid, start, end);
+
+   //printf("I'm master thread %i in adaptive loop init\n", gomp_thread()->ts.team_id);
+   #if defined(LIBGOMP_USE_NUMA)
+   #if 0
+     struct gomp_thread *thr = gomp_thread();
+     struct gomp_team *team = thr->ts.team;
+     int j;
+     printf("Used #numa nodes: %i\n", team->nnumanodes);
+     struct gomp_thread_pool *pool = thr->thread_pool;
+     for (j=0; j<32; ++j)
+     {
+       if (pool->numa_info[j].size >0)
+       {
+         printf("Node: %i, prefix: %i,  #threads:%i  ", j, team->startindex[j], pool->numa_info[j].size);
+         int k;
+         for (k=0; k<pool->numa_info[j].size; ++k)
+           printf("%i ", pool->numa_info[j].team_ids[k]);
+         printf("\n");
+       }
+     }
+   #endif
+   #if 0 // DEAD CODE
+     struct gomp_task_icv* icv = gomp_icv(false);
+     if (1) //icv->attr_distribute)
+     {
+       int i;
+       ws->attr_cpuset = icv->attr_distribute;
+       CPU_ZERO( &ws->attr_cpuset);
+       /* iterate over all threads in the pool to get the cpuset mask */
+       struct gomp_thread_pool *pool = thr->thread_pool;
+       for (i=0; i< pool->threads_used; ++i)
+       {
+         struct gomp_thread* thi = pool->threads[i];
+         if (thi ==0) thi = thr;
+         if (thi !=0)
+         {
+           CPU_SET( thi->coreid, &ws->cpuset );
+         }
+       }
+     }
+   #endif
+   #endif
+   }
+
+   void
+   gomp_loop_adaptive_init_worker (
+     struct gomp_work_share *ws,
+     struct gomp_thread *thr,
+     long start, long end, long chunk_size
+   )
+   {
+     struct gomp_team *team = thr->ts.team;
+     int i = thr->ts.team_id;
+     struct gomp_ws_adaptive_chunk *current_chunk = &ws->adaptive_chunks[i];
+     int nthreads = team ? team->nthreads : 1;
+     long range = (end - start) / nthreads;
+
+     if (current_chunk->is_init)
+         abort ();
+
+     //printf("I'm worker thread %i in adaptive loop init\n", i);
+
+     current_chunk->nb_exec             = 0;
+   #if defined(LIBGOMP_USE_NUMA)
+     /* chunk must be refill in critical section, if steal can occurs  */
+     kaapi_atomic_lock (&current_chunk->lock);
+     current_chunk->begin               = start + (team->startindex[thr->numaid] + thr->index_numanode) * range;
+     current_chunk->end                 = current_chunk->begin + range;
+     if (current_chunk->end > end)
+       current_chunk->end = end;
+     if (team->startindex[thr->numaid] + thr->index_numanode == nthreads-1)
+       current_chunk->end = end;
+     kaapi_atomic_unlock (&current_chunk->lock);
+   #else
+     /* chunk must be refill in critical section, if steal can occurs  */
+     kaapi_atomic_lock (&current_chunk->lock);
+     current_chunk->begin               = start + (i * range);
+     current_chunk->end                 = (i == nthreads - 1) ? end : start + ((i + 1) * range);
+     kaapi_atomic_unlock (&current_chunk->lock);
+   #endif
+    //printf("Thread: %i ws:%p coreid: %i -> [%li, %li)\n", i, (void*)ws, thr->coreid, current_chunk->begin, current_chunk->end);
+    current_chunk->is_init = true;
+   }
+
+   static void
+   gomp_loop_adaptive_cleanup (void) {
+
+     /* François ? do nothing because at the end of a previous chunk computation, we always have end <= begin */
+   #if 1
+     struct gomp_thread *thr = gomp_thread();
+     struct gomp_ws_adaptive_chunk *current_chunk = &thr->ts.work_share->adaptive_chunks[thr->ts.team_id];
+     current_chunk->is_init             = false;
+     current_chunk->nb_exec             = 0;
+     kaapi_atomic_lock (&current_chunk->lock);
+     current_chunk->begin               = 0;
+     current_chunk->end                 = 0;
+     kaapi_atomic_unlock (&current_chunk->lock);
+   #endif
+   }
+
+   #endif // if defined(LIBGOMP_USE_ADAPTIVE)
 
 
 static bool
@@ -307,7 +444,7 @@ gomp_loop_profile_start(long start, long end, long incr, long chunk_size,
 
   t0.tick = 0;
 
-  return !gomp_iter_profile_next (istart, iend);  
+  return !gomp_iter_profile_next (istart, iend);
 }
 
 static bool
@@ -402,6 +539,34 @@ gomp_loop_srr_start (long start, long end, long incr, long chunk_size,
 
 /* END SRR */
 
+#if defined(LIBGOMP_USE_ADAPTIVE)
+static bool
+gomp_loop_adaptive_start (long start, long end, long incr, long chunk_size,
+			  long *istart, long *iend)
+{
+  struct gomp_thread *thr = gomp_thread ();
+
+#if defined(LIBGOMP_PROFILE_LOOP)
+  union tick_t t0,t1;
+  _GET_TICK(t0);
+#endif
+
+  if (gomp_work_share_start (false))
+    {
+//printf("Master: %i\n", thr->ts.team_id );
+      gomp_loop_init (thr->ts.work_share, start, end, incr,
+		      GFS_ADAPTIVE, chunk_size, 0);
+      gomp_work_share_init_done ();
+    }
+
+#if defined(LIBGOMP_PROFILE_LOOP)
+  _GET_TICK(t1);
+  PF(thr)->tinitloop += t1.tick - t0.tick;
+#endif
+  return gomp_iter_adaptive_next (istart, iend);;
+}
+#endif
+
 static bool
 gomp_loop_oracle_start (long start, long end, long incr, long chunk_size,
 		       long *istart, long *iend)
@@ -449,6 +614,11 @@ GOMP_loop_runtime_start (long start, long end, long incr,
     case GFS_SRR:
       return gomp_loop_srr_start (start, end, incr, icv->run_sched_modifier, istart, iend);
       /* END SRR */
+#if defined(LIBGOMP_USE_ADAPTIVE)
+    case GFS_ADAPTIVE:
+      return gomp_loop_adaptive_start (start, end, incr, icv->run_sched_modifier,
+      				                   istart, iend);
+#endif
     case GFS_ORACLE:
       return gomp_loop_oracle_start (start, end, incr, icv->run_sched_modifier, istart, iend);
 
@@ -561,8 +731,8 @@ GOMP_loop_ordered_runtime_start (long start, long end, long incr,
     }
 }
 
-/* The *_next routines are called when the thread completes processing of 
-   the iteration block currently assigned to it.  If the work-share 
+/* The *_next routines are called when the thread completes processing of
+   the iteration block currently assigned to it.  If the work-share
    construct is bound directly to a parallel construct, then the iteration
    bounds may have been set up before the parallel.  In which case, this
    may be the first iteration for the thread.
@@ -649,6 +819,10 @@ GOMP_loop_runtime_next (long *istart, long *iend)
       return gomp_loop_guided_next (istart, iend);
     case GFS_SRR:
       return gomp_loop_srr_next (istart, iend);
+#if defined(LIBGOMP_USE_ADAPTIVE)
+    case GFS_ADAPTIVE:
+      return gomp_iter_adaptive_next (istart, iend);
+#endif
     case GFS_ORACLE:
       return gomp_loop_oracle_next (istart, iend);
     default:
@@ -719,7 +893,7 @@ bool
 GOMP_loop_ordered_runtime_next (long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
-  
+
   switch (thr->ts.work_share->sched)
     {
     case GFS_STATIC:
@@ -847,6 +1021,15 @@ GOMP_loop_end (void)
     profile_loop = 0;
   }
   gomp_work_share_end ();
+
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  /* Thierry: optimize case where adaptive loop was not used
+     Does the ICV is correct here ?
+  */
+  struct gomp_task_icv *icv = gomp_icv (false);
+  if (icv->run_sched_var == GFS_ADAPTIVE)
+    gomp_loop_adaptive_cleanup ();
+#endif
 }
 
 

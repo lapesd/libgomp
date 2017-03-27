@@ -130,6 +130,9 @@ gomp_thread_start (void *xdata)
   gomp_sem_destroy (&thr->release);
   thr->thread_pool = NULL;
   thr->task = NULL;
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  thr->seed = rand();
+#endif
   return NULL;
 }
 
@@ -153,13 +156,22 @@ gomp_new_team (unsigned nthreads)
 #else
   gomp_mutex_init (&team->work_share_list_free_lock);
 #endif
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  team->work_shares[0].adaptive_chunks = 0;
+  team->work_shares[0].adaptive_chunks_size = 0;
+#endif
   team->work_shares_to_free = &team->work_shares[0];
   gomp_init_work_share (&team->work_shares[0], false, nthreads);
   team->work_shares[0].next_alloc = NULL;
   team->work_share_list_free = NULL;
   team->work_share_list_alloc = &team->work_shares[1];
-  for (i = 1; i < 7; i++)
+  for (i = 1; i < 7; i++) {
     team->work_shares[i].next_free = &team->work_shares[i + 1];
+#if defined(LIBGOMP_USE_ADAPTIVE)
+    team->work_shares[i].adaptive_chunks = 0;
+    team->work_shares[i].adaptive_chunks_size = 0;
+#endif
+  }
   team->work_shares[i].next_free = NULL;
 
   team->nthreads = nthreads;
@@ -297,6 +309,9 @@ gomp_team_start (void (*fn) (void *), void *data, unsigned nthreads,
   pool = thr->thread_pool;
   task = thr->task;
   icv = task ? &task->icv : &gomp_global_icv;
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  thr->seed = rand();
+#endif
   if (__builtin_expect (gomp_places_list != NULL, 0) && thr->place == 0)
     gomp_init_affinity ();
 
@@ -801,6 +816,37 @@ gomp_team_start (void (*fn) (void *), void *data, unsigned nthreads,
     pthread_attr_destroy (&thread_attr);
 
  do_release:
+ #if defined(LIBGOMP_USE_ADAPTIVE) || defined(LIBGOMP_USE_NUMA)
+   /* Add current thread in pool */
+   if ((pool->threads[0] ==0) && (thr->ts.team_id ==0))
+     pool->threads[0] = thr;
+ #endif
+
+ #if defined(LIBGOMP_USE_NUMA)
+   team->nnumanodes = 0;
+   if (!nested)
+   {
+     unsigned int lastsize = -1;
+     for (i=0; i<32; ++i)
+     {
+       if (pool->numa_info[i].size >0)
+       {
+         ++team->nnumanodes;
+         if (lastsize == -1)
+         {
+           team->startindex[i] = 0;
+           lastsize = pool->numa_info[i].size;
+         }
+         else {
+           team->startindex[i] = lastsize;
+           lastsize += pool->numa_info[i].size;
+         }
+       }
+     }
+     //printf("[start team] Used numa node: %i\n", team->nnumanodes);
+   }
+ #endif
+
   gomp_barrier_wait (nested ? &team->barrier : &pool->threads_dock);
 
   /* Decrease the barrier threshold to match the number of threads

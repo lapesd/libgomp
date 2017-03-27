@@ -31,7 +31,7 @@
    that are part of the external ABI, and the lower case prefix "gomp"
    is used group items that are completely private to the library.  */
 
-#ifndef LIBGOMP_H 
+#ifndef LIBGOMP_H
 #define LIBGOMP_H 1
 
 #include "config.h"
@@ -91,6 +91,11 @@ enum gomp_schedule_type
   /* BEGIN SRR */
   GFS_SRR,
   /* END SRR */
+
+  /* BEGIN ADAPTIVE */
+  GFS_ADAPTIVE,
+  /* END ADAPTIVE */
+
   GFS_ORACLE,
 
   GFS_AUTO
@@ -101,12 +106,18 @@ struct gomp_work_share
   /* This member records the SCHEDULE clause to be used for this construct.
      The user specification of "runtime" will already have been resolved.
      If this is a SECTIONS construct, this value will always be DYNAMIC.  */
-  enum gomp_schedule_type sched;  
+  enum gomp_schedule_type sched;
 
   int mode;
 
   union {
     struct {
+#if defined(LIBGOMP_USE_ADAPTIVE)
+      /* This is the iteration start point.
+      */
+      long start_t0;
+#endif
+
       /* This is the chunk_size argument to the SCHEDULE clause.  */
       long chunk_size;
 
@@ -126,6 +137,18 @@ struct gomp_work_share
       unsigned long long incr_ull;
     };
   };
+
+  #if defined(LIBGOMP_USE_ADAPTIVE)
+    /* Per-thread current adaptive chunk. */
+    struct gomp_ws_adaptive_chunk *adaptive_chunks __attribute__ ((aligned(64)));
+    size_t adaptive_chunks_size;
+  #if defined(LIBGOMP_USE_NUMA)
+    bool attr_cpuset;
+  #endif
+
+    /* Number of iterations that we still need to compute. */
+    volatile int nb_iterations_left __attribute__ ((aligned(64)));
+  #endif
 
   /* This is a circular queue that details which threads will be allowed
      into the ordered region and in which order.  When a thread allocates
@@ -177,7 +200,7 @@ struct gomp_work_share
     /* This is the returned data structure for SINGLE COPYPRIVATE.  */
     void *copyprivate;
   };
-  
+
   /*
    * Used in GFS_SRR scheduler.
    */
@@ -200,7 +223,20 @@ struct gomp_work_share
   unsigned inline_ordered_team_ids[0];
 };
 
-/* This structure contains all of the thread-local data associated with 
+#include "config/linux/atomic.h"
+
+#if defined(LIBGOMP_USE_ADAPTIVE)
+struct gomp_ws_adaptive_chunk
+{
+  bool is_init;
+  long nb_exec;
+  volatile long begin __attribute__ ((aligned(64)));
+  kaapi_lock_t lock __attribute__ ((aligned(64)));
+  volatile long end; /*  __attribute__ ((aligned(64)));*/
+} __attribute__ ((aligned(64)));
+#endif
+
+/* This structure contains all of the thread-local data associated with
    a thread team.  This is the data that must be saved when a thread
    encounters a nested PARALLEL construct.  */
 
@@ -210,7 +246,7 @@ struct gomp_team_state
   struct gomp_team *team;
 
   /* This is the work share construct which this thread is currently
-     processing.  Recall that with NOWAIT, not all threads may be 
+     processing.  Recall that with NOWAIT, not all threads may be
      processing the same construct.  */
   struct gomp_work_share *work_share;
 
@@ -254,7 +290,7 @@ struct target_mem_desc;
    section 2.3.1.  Those described as having one copy per task are
    stored within the structure; those described as having one copy
    for the whole program are (naturally) global variables.  */
-   
+
 struct gomp_task_icv
 {
   unsigned long nthreads_var;
@@ -265,6 +301,9 @@ struct gomp_task_icv
   bool dyn_var;
   bool nest_var;
   char bind_var;
+#if defined(LIBGOMP_USE_ADAPTIVE) && defined(LIBGOMP_USE_NUMA)
+  bool attr_distribute;
+#endif
   /* Internal ICV.  */
   struct target_mem_desc *target_data;
 };
@@ -364,6 +403,14 @@ struct gomp_team
      as a block last time.  */
   unsigned work_share_chunk;
 
+#if defined(LIBGOMP_USE_NUMA)
+  /* This is the number of numa nodes in the current team.  */
+  unsigned nnumanodes;
+
+  /* This is the additive prefix of nnumanodes */
+  unsigned startindex[32];
+#endif
+
   /* This is the saved team state that applied to a master thread before
      the current thread was created.  */
   struct gomp_team_state prev_ts;
@@ -458,8 +505,27 @@ struct gomp_thread
 
   /* User pthread thread pool */
   struct gomp_thread_pool *thread_pool;
+
+#if defined(LIBGOMP_USE_NUMA)
+  /* core id -1 == not set to core id... */
+  int coreid;
+  unsigned char numaid;
+  unsigned char index_numanode; /* index in team->numa_info[numaid].team_ids */
+#endif
+
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  unsigned int seed __attribute__ ((aligned(64)));
+#endif
 };
 
+#if defined(LIBGOMP_USE_NUMA)
+/* Warning: in this prototype we fix maximal number of threads per numa node to be == 16 */
+struct gomp_numa_info {
+  unsigned short size;
+  unsigned char  team_ids[16];
+}; /* do not align the struct, even if size if access with sync_fetch_and_add, else the
+      numa_threads field in gomp_thread_pool will be to large (~2kbytes) */
+#endif
 
 struct gomp_thread_pool
 {
@@ -474,6 +540,10 @@ struct gomp_thread_pool
 
   /* This barrier holds and releases threads waiting in threads.  */
   gomp_barrier_t threads_dock;
+
+  #if defined(LIBGOMP_USE_NUMA)
+    struct gomp_numa_info numa_info[32] __attribute__((aligned(64)));  /* numa_threads[i]=array of team_id thread on numa node i */
+  #endif
 };
 
 enum gomp_cancel_kind
@@ -569,6 +639,7 @@ extern bool gomp_iter_guided_next (long *, long *);
    iter.c file. */
 extern bool gomp_iter_srr_next (long *, long *);
 /* END SRR */
+extern bool gomp_iter_adaptive_next (long *, long *);
 extern bool gomp_iter_oracle_next (long *, long *);
 #endif
 

@@ -79,8 +79,21 @@ alloc_work_share (struct gomp_team *team)
   ws->next_alloc = team->work_shares[0].next_alloc;
   team->work_shares[0].next_alloc = ws;
   team->work_share_list_alloc = &ws[1];
-  for (i = 1; i < team->work_share_chunk - 1; i++)
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  ws[0].adaptive_chunks = 0;
+  ws[0].adaptive_chunks_size = 0;
+#endif
+  for (i = 1; i < team->work_share_chunk - 1; i++) {
     ws[i].next_free = &ws[i + 1];
+#if defined(LIBGOMP_USE_ADAPTIVE)
+    ws[i].adaptive_chunks = 0;
+    ws[i].adaptive_chunks_size = 0;
+#endif
+  }
+#if defined(LIBGOMP_USE_ADAPTIVE)
+  ws[i].adaptive_chunks = 0;
+  ws[i].adaptive_chunks_size = 0;
+#endif
   ws[i].next_free = NULL;
   return ws;
 }
@@ -93,6 +106,31 @@ gomp_init_work_share (struct gomp_work_share *ws, bool ordered,
 		      unsigned nthreads)
 {
   gomp_mutex_init (&ws->lock);
+  #if defined(LIBGOMP_USE_ADAPTIVE)
+  #if defined(LIBGOMP_USE_NUMA)
+    ws->attr_cpuset = false;
+  #endif
+
+  #if defined(LIBGOMP_PROFILE_LOOP)
+    ws->ws_index= __sync_fetch_and_add(&work_shared_index, 1);
+  #endif
+
+    ws->nb_iterations_left = 0;
+    if (ws->adaptive_chunks_size < nthreads)
+    {
+      int i;
+      size_t size = nthreads * sizeof (struct gomp_ws_adaptive_chunk);
+      if (ws->adaptive_chunks_size != 0) free(ws->adaptive_chunks);
+      posix_memalign ((void **)&ws->adaptive_chunks, 64, size );
+      bzero (ws->adaptive_chunks, size);
+
+      for (i = 0; i < nthreads; i++) {
+        kaapi_atomic_initlock (&ws->adaptive_chunks[i].lock);
+      }
+      ws->adaptive_chunks_size = nthreads;
+    }
+  #endif
+
   if (__builtin_expect (ordered, 0))
     {
 #define INLINE_ORDERED_TEAM_IDS_CNT \
@@ -142,8 +180,15 @@ static inline void
 free_work_share (struct gomp_team *team, struct gomp_work_share *ws)
 {
   gomp_fini_work_share (ws);
-  if (__builtin_expect (team == NULL, 0))
+  if (__builtin_expect (team == NULL, 0)) {
+#if defined(LIBGOMP_USE_ADAPTIVE)
+    if (ws->adaptive_chunks !=0)
+      free(ws->adaptive_chunks);
+    ws->adaptive_chunks = 0;
+    ws->adaptive_chunks_size = 0;
+#endif
     free (ws);
+  }
   else
     {
       struct gomp_work_share *next_ws;
@@ -181,6 +226,10 @@ gomp_work_share_start (bool ordered)
   if (team == NULL)
     {
       ws = gomp_malloc (sizeof (*ws));
+#if defined(LIBGOMP_USE_ADAPTIVE)
+      ws->adaptive_chunks = 0;
+      ws->adaptive_chunks_size = 0;
+#endif
       gomp_init_work_share (ws, ordered, 1);
       thr->ts.work_share = ws;
       return ws;
