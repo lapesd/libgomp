@@ -57,14 +57,6 @@ void omp_set_workload(unsigned *tasks, unsigned ntasks)
 	__ntasks = ntasks;
 } 
 
-unsigned __nchunks;
-
-/*============================================================================*
- * Workload Sorting                                                           *
- *============================================================================*/
-
-#define N 128
-
 /*
  * Exchange two numbers.
  */
@@ -97,17 +89,14 @@ static void insertion(unsigned *map, unsigned *a, unsigned n)
 /*
  * Quicksort algorithm.
  */
-void quicksort(unsigned *map, unsigned *a, unsigned n)
+static void quicksort(unsigned *map, unsigned *a, unsigned n)
 {
 	unsigned i, j;
 	unsigned p, t;
     
     /* End recursion. */
-	if (n < N)
-	{
-		insertion(map, a, n);
+	if (n == 1)
 		return;
-	}
     
 	/* Pivot stuff. */
 	p = a[n/2];
@@ -126,7 +115,46 @@ void quicksort(unsigned *map, unsigned *a, unsigned n)
 	quicksort(map, a, i);
 	quicksort(map, a + i, n - i);
 }
- 
+
+static void countsort(const unsigned *a, unsigned n, int *map)
+{
+	unsigned k;
+	unsigned *counttab;
+	unsigned min, max;
+
+	/* Find min and max values. */
+	min = INT_MAX; max = INT_MIN;
+	for (unsigned i = 0; i < n; i += 2)
+	{
+		if (a[i] < min)
+			min = a[i];
+
+		if (a[i] > max)
+			max = a[i];
+	}
+
+	k = (max - min) + 1;
+	counttab = malloc(k*(n + 1)*sizeof(unsigned));
+
+	for (unsigned i = 0; i < k; i++)
+		counttab[i*(n + 1)] = 0;
+
+	for (unsigned i = 0; i < n; i++)
+	{
+		unsigned p;
+
+		p = (a[i] - min)*(n + 1);
+		counttab[p + counttab[p] + 1] = i;
+		counttab[p]++;
+	}
+
+	for (unsigned i = 0; i < k; i++)
+	{
+		for (unsigned j = 1; j <= counttab[i*(n + 1)]; j++)
+			*map++ = counttab[i*(n + 1) + j] + 1;
+	}
+}
+
 /*
  * Sorts an array of numbers.
  */
@@ -134,11 +162,21 @@ void sort(unsigned *a, unsigned n, unsigned *map)
 {
 	unsigned i;	
 
+	((void) insertion);
+	((void) quicksort);
+	((void) countsort);
+
 	/* Create map. */
 	for (i = 0; i < n; i++)
 		map[i] = i;
 
+#if defined(_USE_COUNTSORT)
+	countsort(map, a, n);
+#elif defined(_USE_QUICKSORT)
+	quicksort(map, a, n);
+#else
 	insertion(map, a, n);
+#endif
 } 
 
 /*============================================================================*
@@ -213,6 +251,8 @@ static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
 /*============================================================================*
  * BIN+LPT Loop Scheduler                                                     *
  *============================================================================*/
+
+unsigned __nchunks;
 
 /**
  * @brief Computes the cummulative sum of an array.
