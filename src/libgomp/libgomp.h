@@ -181,7 +181,9 @@ struct gomp_work_share
   /*
    * Used in the HSS scheduler.
    */
+  #ifndef HAVE_SYNC_BUILTINS
   gomp_mutex_t hss_lock;
+  #endif
   unsigned wremaining;
 
   union {

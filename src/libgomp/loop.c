@@ -458,7 +458,9 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 
   case GFS_HSS:
 	{
+	  #ifndef HAVE_SYNC_BUILTINS
       gomp_mutex_init (&ws->hss_lock);
+	  #endif
       ws->loop_start = start;
 	  ws->wremaining = 0;
 	  for (unsigned i = 0; i < __ntasks; i++)

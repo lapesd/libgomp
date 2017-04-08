@@ -275,7 +275,9 @@ gomp_iter_hss_next (long *pstart, long *pend)
   ws = thr->ts.work_share;
   nthreads = (team != NULL) ? team->nthreads : 1;
 
+  #ifndef HAVE_SYNC_BUILTINS
   gomp_mutex_lock(&ws->hss_lock);
+  #endif
 
   /* Comput chunksize. */
   chunksize = ceil(ws->wremaining/(1.5*nthreads));
@@ -315,7 +317,9 @@ gomp_iter_hss_next (long *pstart, long *pend)
   ws->loop_start += k;
   ws->wremaining -= chunkweight;
 
+  #ifndef HAVE_SYNC_BUILTINS
   gomp_mutex_unlock(&ws->hss_lock);
+  #endif
 
   return ((*pstart == __ntasks) ? false : true);
 }
