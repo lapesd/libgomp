@@ -1,0 +1,32 @@
+
+Dynamic section at offset 0x1097e0 contains 29 entries:
+  Étiquettes Type                         Nom/Valeur
+ 0x0000000000000001 (NEEDED)             Bibliothèque partagée: [libdl.so.2]
+ 0x0000000000000001 (NEEDED)             Bibliothèque partagée: [libpthread.so.0]
+ 0x0000000000000001 (NEEDED)             Bibliothèque partagée: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Bibliothèque partagée: [ld-linux-x86-64.so.2]
+ 0x000000000000000e (SONAME)             Bibliothèque soname: [libiomp5.so]
+ 0x000000000000000c (INIT)               0x17760
+ 0x000000000000000d (FINI)               0x90df9
+ 0x0000000000000019 (INIT_ARRAY)         0x3097b8
+ 0x000000000000001b (INIT_ARRAYSZ)       16 (octets)
+ 0x000000000000001a (FINI_ARRAY)         0x3097c8
+ 0x000000000000001c (FINI_ARRAYSZ)       16 (octets)
+ 0x000000006ffffef5 (GNU_HASH)           0x228
+ 0x0000000000000005 (STRTAB)             0x8340
+ 0x0000000000000006 (SYMTAB)             0x1d88
+ 0x000000000000000a (STRSZ)              20970 (octets)
+ 0x000000000000000b (SYMENT)             24 (octets)
+ 0x0000000000000003 (PLTGOT)             0x3099f0
+ 0x0000000000000007 (RELA)               0xdfc8
+ 0x0000000000000008 (RELASZ)             38808 (octets)
+ 0x0000000000000009 (RELAENT)            24 (octets)
+ 0x000000006ffffffc (VERDEF)             0xdda8
+ 0x000000006ffffffd (VERDEFNUM)          11
+ 0x0000000000000018 (BIND_NOW)           
+ 0x000000006ffffffb (FLAGS_1)            Fanions: NOW
+ 0x000000006ffffffe (VERNEED)            0xdf18
+ 0x000000006fffffff (VERNEEDNUM)         4
+ 0x000000006ffffff0 (VERSYM)             0xd52a
+ 0x000000006ffffff9 (RELACOUNT)          1417
+ 0x0000000000000000 (NULL)               0x0
