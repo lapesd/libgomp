@@ -57,7 +57,7 @@ void omp_set_workload(unsigned *tasks, unsigned ntasks)
 	__ntasks = ntasks;
 } 
 
-unsigned __nchunks;
+unsigned __nchunks = 1;
 
 /*============================================================================*
  * Workload Sorting                                                           *
@@ -418,9 +418,16 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 
   case GFS_BINLPT:
 	{
+      if (num_threads == 0)
+	  {
+		  struct gomp_thread *thr = gomp_thread ();
+		  struct gomp_team *team = thr->ts.team;
+		  num_threads = (team != NULL) ? team->nthreads : 1;
+	  }
+
 	  __nchunks = chunk_size;
 	  if (__nchunks == 1)
-		  __nchunks = __ntasks;
+		  __nchunks = num_threads;
 	}
   case GFS_SRR:
     {
