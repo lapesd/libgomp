@@ -130,8 +130,6 @@ gomp_fini_work_share (struct gomp_work_share *ws)
     free (ws->ordered_team_ids);
   if (ws->thread_start != NULL)
 	free(ws->thread_start);
-  if (ws->taskmap != NULL)
-	free(ws->taskmap);
   gomp_ptrlock_destroy (&ws->next_ws);
 }
 

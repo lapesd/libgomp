@@ -11,6 +11,7 @@ OMP_1.0 {
  omp_set_nested;
  omp_get_nested;
  omp_set_workload;
+ omp_set_loop;
  omp_init_lock;
  omp_init_nest_lock;
  omp_destroy_lock;

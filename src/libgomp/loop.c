@@ -35,6 +35,8 @@
  * Workload Information                                                       *
  *============================================================================*/
 
+#define NR_LOOPS 16
+
 /**
  * @brief Tasks.
  */
@@ -45,19 +47,54 @@ unsigned *__tasks;
  */
 unsigned __ntasks;
 
+static unsigned *__taskmaps[NR_LOOPS] = { NULL };
+static int curr_loop = -1;
+static int skip = 0;
+
+unsigned __nchunks = 1;
+
 /**
  * @brief Sets the workload of the next parallel for loop.
  *
  * @param tasks  Load of iterations.
  * @param ntasks Number of tasks.
  */
-void omp_set_workload(unsigned *tasks, unsigned ntasks)
+int omp_set_workload(unsigned *tasks, unsigned ntasks)
 {
+	int loopid;
+
+	for (int i = 0; i < NR_LOOPS; i++)
+	{
+		if (__taskmaps[i] == NULL)
+		{
+			loopid = i;
+			goto found;
+		}
+	}
+
+	loopid = 0;
+	free(__taskmaps[loopid]);
+
+found:
+
 	__tasks = tasks;
 	__ntasks = ntasks;
-} 
 
-unsigned __nchunks = 1;
+	skip = 0;
+
+	return (curr_loop = loopid);
+}
+
+/**
+ * @brief Sets current loop id.
+ */
+void omp_set_loop(int loopid)
+{
+
+	curr_loop = loopid;
+
+	skip = 1;
+}
 
 /*============================================================================*
  * Workload Sorting                                                           *
@@ -440,7 +477,18 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 		  num_threads = (team != NULL) ? team->nthreads : 1;
 	  }
 
-      ws->taskmap = balance(__tasks, __ntasks, num_threads);
+	  assert(curr_loop >= 0);
+
+	  if (skip)
+	  {
+		  // TODO: Assert previous scheduling information.
+		  ws->taskmap = __taskmaps[curr_loop];
+	  }
+	  else
+	  {
+		  __taskmaps[curr_loop] = balance(__tasks, __ntasks, num_threads);
+		  ws->taskmap = __taskmaps[curr_loop];
+	  }
       ws->loop_start = start;
       ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
     }

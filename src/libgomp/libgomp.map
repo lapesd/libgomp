@@ -11,6 +11,7 @@ OMP_1.0 {
 	omp_set_nested;
 	omp_get_nested;
 	omp_set_workload;
+	omp_set_loop;
 #ifdef HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT
         # If the assembler used lacks the .symver directive or the linker
 	# doesn't support GNU symbol versioning, we have the same symbol in
