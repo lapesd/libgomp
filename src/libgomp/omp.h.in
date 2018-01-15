@@ -109,6 +109,9 @@ extern int omp_get_ancestor_thread_num (int) __GOMP_NOTHROW;
 extern int omp_get_team_size (int) __GOMP_NOTHROW;
 extern int omp_get_active_level (void) __GOMP_NOTHROW;
 
+extern int omp_set_workload(unsigned *, unsigned);
+extern void omp_set_loop(int);
+
 extern int omp_in_final (void) __GOMP_NOTHROW;
 
 extern int omp_get_cancellation (void) __GOMP_NOTHROW;
