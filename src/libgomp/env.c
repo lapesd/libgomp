@@ -167,7 +167,7 @@ parse_schedule (void)
   return;
 }
 
-/* Parse an unsigned long environment variable.  Return true if one was 
+/* Parse an unsigned long environment variable.  Return true if one was
    present and it was successfully parsed.  */
 
 static bool
@@ -203,7 +203,7 @@ parse_unsigned_long (const char *name, unsigned long *pvalue, bool allow_zero)
   return false;
 }
 
-/* Parse a positive int environment variable.  Return true if one was 
+/* Parse a positive int environment variable.  Return true if one was
    present and it was successfully parsed.  */
 
 static bool
@@ -221,7 +221,7 @@ parse_int (const char *name, int *pvalue, bool allow_zero)
   return true;
 }
 
-/* Parse an unsigned long list environment variable.  Return true if one was 
+/* Parse an unsigned long list environment variable.  Return true if one was
    present and it was successfully parsed.  */
 
 static bool
@@ -720,7 +720,7 @@ parse_places_var (const char *name, bool ignore)
   return false;
 }
 
-/* Parse the OMP_STACKSIZE environment varible.  Return true if one was 
+/* Parse the OMP_STACKSIZE environment varible.  Return true if one was
    present and it was successfully parsed.  */
 
 static bool
@@ -781,7 +781,7 @@ parse_stacksize (const char *name, unsigned long *pvalue)
   return false;
 }
 
-/* Parse the GOMP_SPINCOUNT environment varible.  Return true if one was 
+/* Parse the GOMP_SPINCOUNT environment varible.  Return true if one was
    present and it was successfully parsed.  */
 
 static bool
@@ -1345,6 +1345,8 @@ omp_set_schedule (omp_sched_t kind, int modifier)
       icv->run_sched_modifier = modifier;
       break;
     case omp_sched_auto:
+    case omp_sched_binlpt:
+    case omp_sched_srr:
       break;
     default:
       return;
