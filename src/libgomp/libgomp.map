@@ -15,7 +15,7 @@ OMP_1.0 {
 #ifdef HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT
         # If the assembler used lacks the .symver directive or the linker
 	# doesn't support GNU symbol versioning, we have the same symbol in
-	# two versions, which Sun ld chokes on. 
+	# two versions, which Sun ld chokes on.
 	omp_init_lock;
 	omp_init_nest_lock;
 	omp_destroy_lock;
@@ -70,6 +70,10 @@ OMP_3.0 {
 	omp_get_schedule;
 	omp_get_schedule_;
 	omp_get_schedule_8_;
+	omp_set_loop;
+	omp_set_loop_;
+	omp_set_workload;
+	omp_set_workload_;
 	omp_get_thread_limit;
 	omp_get_thread_limit_;
 	omp_set_max_active_levels;
