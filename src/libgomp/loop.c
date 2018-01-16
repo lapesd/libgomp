@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "libgomp.h"
 
 /*============================================================================*
@@ -47,11 +48,27 @@ unsigned *__tasks;
  */
 unsigned __ntasks;
 
-static unsigned *__taskmaps[NR_LOOPS] = { NULL };
+struct loop
+{
+  int line;
+  char *filename;
+  unsigned *taskmap;
+  bool override;
+};
+
+static struct loop loops[NR_LOOPS] = { {-1, NULL, NULL} };
 static int curr_loop = -1;
-static int skip = 0;
 
 unsigned __nchunks = 1;
+
+static void init_loop_struct(struct loop *loop,
+                             const char *file,
+                             int line) {
+  size_t filename_len = strlen(file) + 1;
+  loop->filename = calloc(filename_len, 1);
+  strncpy(loop->filename, file, filename_len);
+  loop->line = line;
+}
 
 /**
  * @brief Sets the workload of the next parallel for loop.
@@ -59,41 +76,55 @@ unsigned __nchunks = 1;
  * @param tasks  Load of iterations.
  * @param ntasks Number of tasks.
  */
-int omp_set_workload(unsigned *tasks, unsigned ntasks)
+void omp_set_loop_workload(unsigned *tasks,
+                           unsigned ntasks,
+                           bool override,
+                           const char *file,
+                           int line)
 {
-	int loopid;
+  int first_nil = -1;
+  int slot = -1;
 
 	for (int i = 0; i < NR_LOOPS; i++)
 	{
-		if (__taskmaps[i] == NULL)
-		{
-			loopid = i;
-			goto found;
-		}
+    struct loop *loop = &loops[i];
+		if (loop->taskmap == NULL && first_nil == -1)
+      first_nil = i;
+    if (loop->filename != NULL) {
+      if ((strcmp(loop->filename, file) == 0) && loop->line == line) {
+        slot = i;
+        break;
+      }
+    }
 	}
 
-	loopid = 0;
-	free(__taskmaps[loopid]);
+  if (slot == -1) {
+    /* That's the first time we encounter this loop. */
+    if (first_nil != -1) {
+      /* There's an empty slot in the loops array. */
+      init_loop_struct(&loops[first_nil], file, line);
+      /* Force override to true, so we compute the task mapping whatever the
+         value of override is. */
+      loops[first_nil].override = true;
+      curr_loop = first_nil;
+    } else {
+      /* The loops array is full... */
+      fprintf(stderr, "[libgomp] Too many loops. Aborting.\n");
+      abort();
+    }
+  } else {
+    /* This loop has already been balanced, use the user-defined override
+       parameter to decide whether we should compute the task mapping again or
+       not. (see gomp_loop_init().)*/
+    loops[slot].override = override;
+    curr_loop = slot;
+  }
 
-found:
+  assert(curr_loop != -1);
+  //printf("[binlpt] using slot %i for loop %s:%i\n", curr_loop, file, line);
 
 	__tasks = tasks;
 	__ntasks = ntasks;
-
-	skip = 0;
-
-	return (curr_loop = loopid);
-}
-
-/**
- * @brief Sets current loop id.
- */
-void omp_set_loop(int loopid)
-{
-
-	curr_loop = loopid;
-
-	skip = 1;
 }
 
 /*============================================================================*
@@ -358,6 +389,8 @@ static unsigned *binlpt_balance(unsigned *tasks, unsigned ntasks, unsigned nthre
 	unsigned *chunks;         /* Chunks.           */
 	unsigned *chunkoff;       /* Offset to chunks. */
 
+  printf("[binlpt] Balancing loop %s:%i\n", loops[curr_loop].filename, loops[curr_loop].line);
+
 	/* Initialize scheduler data. */
 	taskmap = calloc(ntasks, sizeof(unsigned));
 	assert(taskmap != NULL);
@@ -414,7 +447,7 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
   ws->chunk_size = chunk_size;
   /* Canonicalize loops that have zero iterations to ->next == ->end.  */
   ws->end = ((incr > 0 && start > end) || (incr < 0 && start < end))
-	    ? start : end;
+    ? start : end;
   ws->incr = incr;
   ws->next = start;
 
@@ -426,69 +459,64 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 #ifdef HAVE_SYNC_BUILTINS
     {
       /* For dynamic scheduling prepare things to make each iteration
-	 faster.  */
+         faster.  */
       struct gomp_thread *thr = gomp_thread ();
       struct gomp_team *team = thr->ts.team;
       long nthreads = team ? team->nthreads : 1;
 
       if (__builtin_expect (incr > 0, 1))
-	{
-	  /* Cheap overflow protection.  */
-	  if (__builtin_expect ((nthreads | ws->chunk_size)
-				>= 1UL << (sizeof (long)
-					   * __CHAR_BIT__ / 2 - 1), 0))
-	    ws->mode = 0;
-	  else
-	    ws->mode = ws->end < (LONG_MAX
-				  - (nthreads + 1) * ws->chunk_size);
-	}
+        {
+          /* Cheap overflow protection.  */
+          if (__builtin_expect ((nthreads | ws->chunk_size)
+                                >= 1UL << (sizeof (long)
+                                           * __CHAR_BIT__ / 2 - 1), 0))
+            ws->mode = 0;
+          else
+            ws->mode = ws->end < (LONG_MAX
+                                  - (nthreads + 1) * ws->chunk_size);
+        }
       /* Cheap overflow protection.  */
       else if (__builtin_expect ((nthreads | -ws->chunk_size)
-				 >= 1UL << (sizeof (long)
-					    * __CHAR_BIT__ / 2 - 1), 0))
-	ws->mode = 0;
+                                 >= 1UL << (sizeof (long)
+                                            * __CHAR_BIT__ / 2 - 1), 0))
+        ws->mode = 0;
       else
-	ws->mode = ws->end > (nthreads + 1) * -ws->chunk_size - LONG_MAX;
+        ws->mode = ws->end > (nthreads + 1) * -ws->chunk_size - LONG_MAX;
     }
 #endif
     break;
 
   case GFS_BINLPT:
-	{
+    {
       if (num_threads == 0)
-	  {
-		  struct gomp_thread *thr = gomp_thread ();
-		  struct gomp_team *team = thr->ts.team;
-		  num_threads = (team != NULL) ? team->nthreads : 1;
-	  }
+        {
+          struct gomp_thread *thr = gomp_thread ();
+          struct gomp_team *team = thr->ts.team;
+          num_threads = (team != NULL) ? team->nthreads : 1;
+        }
 
-	  __nchunks = chunk_size;
-	  if (__nchunks == 1)
-		  __nchunks = num_threads;
-	}
+      __nchunks = chunk_size;
+      if (__nchunks == 1)
+        __nchunks = num_threads;
+    }
   case GFS_SRR:
     {
       unsigned *(*balance)(unsigned *, unsigned, unsigned);
       balance = (sched == GFS_SRR) ? srr_balance : binlpt_balance;
       if (num_threads == 0)
-	  {
-		  struct gomp_thread *thr = gomp_thread ();
-		  struct gomp_team *team = thr->ts.team;
-		  num_threads = (team != NULL) ? team->nthreads : 1;
-	  }
+        {
+          struct gomp_thread *thr = gomp_thread ();
+          struct gomp_team *team = thr->ts.team;
+          num_threads = (team != NULL) ? team->nthreads : 1;
+        }
 
-	  assert(curr_loop >= 0);
+      struct loop *loop = &loops[curr_loop];
+      if (loop->override) {
+        /* Refresh the mapping. */
+        loop->taskmap = balance(__tasks, __ntasks, num_threads);
+      }
+      ws->taskmap = loop->taskmap;
 
-	  if (skip)
-	  {
-		  // TODO: Assert previous scheduling information.
-		  ws->taskmap = __taskmaps[curr_loop];
-	  }
-	  else
-	  {
-		  __taskmaps[curr_loop] = balance(__tasks, __ntasks, num_threads);
-		  ws->taskmap = __taskmaps[curr_loop];
-	  }
       ws->loop_start = start;
       ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
     }

@@ -4,7 +4,7 @@
 OMPFLAG = -DOMPVER2 -DOMPVER3
 
 CC=gcc
-CFLAGS =  -O1 -lm -I../build/ -fopenmp
+CFLAGS =  -O1 -lm -I../../build/ -fopenmp
 LDFLAGS = -O0 -lm
 CPP = /usr/bin/cpp
 LIBS = -Wl,-rpath=../../build/.libs/ -L../../build/.libs/ -lgomp

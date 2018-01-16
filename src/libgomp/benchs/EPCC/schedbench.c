@@ -55,25 +55,33 @@ int main(int argc, char **argv) {
     /* TEST STATIC,n */
     cksz = 1;
     while (cksz <= itersperthr) {
-	sprintf(testName, "STATIC %d", cksz);
-	benchmark(testName, &teststaticn);
-	cksz *= 2;
+        sprintf(testName, "STATIC %d", cksz);
+        benchmark(testName, &teststaticn);
+        cksz *= 2;
     }
 
     /* TEST DYNAMIC,n */
     cksz = 1;
     while (cksz <= itersperthr) {
-	sprintf(testName, "DYNAMIC %d", cksz);
-	benchmark(testName, &testdynamicn);
-	cksz *= 2;
+        sprintf(testName, "DYNAMIC %d", cksz);
+        benchmark(testName, &testdynamicn);
+        cksz *= 2;
     }
 
     /* TEST GUIDED,n */
     cksz = 1;
     while (cksz <= itersperthr / nthreads) {
-	sprintf(testName, "GUIDED %d", cksz);
-	benchmark(testName, &testguidedn);
-	cksz *= 2;
+        sprintf(testName, "GUIDED %d", cksz);
+        benchmark(testName, &testguidedn);
+        cksz *= 2;
+    }
+
+    /* TEST BINLPT */
+    cksz = 1;
+    while (cksz <= itersperthr) {
+        sprintf(testName, "BINLPT %d", cksz);
+        benchmark(testName, &testbinlpt);
+        cksz *= 2;
     }
 
     finalise();
@@ -85,9 +93,9 @@ int main(int argc, char **argv) {
 void refer() {
     int i, j;
     for (j = 0; j < innerreps; j++) {
-	for (i = 0; i < itersperthr; i++) {
-	    delay(delaylength);
-	}
+        for (i = 0; i < itersperthr; i++) {
+            delay(delaylength);
+        }
     }
 }
 
@@ -96,12 +104,12 @@ void teststatic() {
     int i, j;
 #pragma omp parallel private(j)
     {
-	for (j = 0; j < innerreps; j++) {
+        for (j = 0; j < innerreps; j++) {
 #pragma omp for schedule(static)
-	    for (i = 0; i < itersperthr * nthreads; i++) {
-		delay(delaylength);
-	    }
-	}
+            for (i = 0; i < itersperthr * nthreads; i++) {
+                delay(delaylength);
+            }
+        }
     }
 }
 
@@ -109,12 +117,12 @@ void teststaticn() {
     int i, j;
 #pragma omp parallel private(j)
     {
-	for (j = 0; j < innerreps; j++) {
+        for (j = 0; j < innerreps; j++) {
 #pragma omp for schedule(static,cksz)
-	    for (i = 0; i < itersperthr * nthreads; i++) {
-		delay(delaylength);
-	    }
-	}
+            for (i = 0; i < itersperthr * nthreads; i++) {
+                delay(delaylength);
+            }
+        }
     }
 }
 
@@ -122,12 +130,12 @@ void testdynamicn() {
     int i, j;
 #pragma omp parallel private(j)
     {
-	for (j = 0; j < innerreps; j++) {
+        for (j = 0; j < innerreps; j++) {
 #pragma omp for schedule(dynamic,cksz)
-	    for (i = 0; i < itersperthr * nthreads; i++) {
-		delay(delaylength);
-	    }
-	}
+            for (i = 0; i < itersperthr * nthreads; i++) {
+                delay(delaylength);
+            }
+        }
     }
 }
 
@@ -135,11 +143,31 @@ void testguidedn() {
     int i, j;
 #pragma omp parallel private(j)
     {
-	for (j = 0; j < innerreps; j++) {
+        for (j = 0; j < innerreps; j++) {
 #pragma omp for schedule(guided,cksz)
-	    for (i = 0; i < itersperthr * nthreads; i++) {
-		delay(delaylength);
-	    }
-	}
+            for (i = 0; i < itersperthr * nthreads; i++) {
+                delay(delaylength);
+            }
+        }
     }
 }
+
+void testbinlpt() {
+    int i, j;
+    unsigned workloads[itersperthr * nthreads];
+    for (i = 0; i < itersperthr * nthreads; i++) {
+        workloads[i] = delaylength;
+    }
+    omp_set_schedule(omp_sched_binlpt, 0);
+    omp_set_workload(workloads, itersperthr * nthreads, false);
+#pragma omp parallel private(j)
+    {
+        for (j = 0; j < innerreps; j++) {
+#pragma omp for schedule(runtime)
+            for (i = 0; i < itersperthr * nthreads; i++) {
+                delay(delaylength);
+            }
+        }
+    }
+}
+
