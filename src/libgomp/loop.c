@@ -389,7 +389,7 @@ static unsigned *binlpt_balance(unsigned *tasks, unsigned ntasks, unsigned nthre
 	unsigned *chunks;         /* Chunks.           */
 	unsigned *chunkoff;       /* Offset to chunks. */
 
-  printf("[binlpt] Balancing loop %s:%i\n", loops[curr_loop].filename, loops[curr_loop].line);
+  //printf("[binlpt] Balancing loop %s:%i\n", loops[curr_loop].filename, loops[curr_loop].line);
 
 	/* Initialize scheduler data. */
 	taskmap = calloc(ntasks, sizeof(unsigned));
