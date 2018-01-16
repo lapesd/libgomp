@@ -103,7 +103,11 @@ void omp_set_workload(unsigned loop_id,
                       unsigned ntasks,
                       bool override)
 {
+  /* Make sure the loop id is correct.*/
   assert((0 <= loop_id) && (loop_id < NR_LOOPS));
+
+  /* Make sure omp_set_workload() is not called in parallel. */
+  assert(gomp_thread()->ts.team_id == 0);
 
   loops[loop_id].override = override;
   curr_loop = loop_id;
