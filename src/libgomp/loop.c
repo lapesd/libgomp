@@ -36,7 +36,7 @@
  * Workload Information                                                       *
  *============================================================================*/
 
-#define NR_LOOPS 16
+#define NR_LOOPS 32
 
 /**
  * @brief Tasks.

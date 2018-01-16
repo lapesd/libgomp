@@ -40,7 +40,6 @@
 #include "schedbench.h"
 
 int cksz, itersperthr = 128;
-unsigned loop_id;
 char testName[32];
 
 int main(int argc, char **argv) {
@@ -78,13 +77,8 @@ int main(int argc, char **argv) {
     }
 
     /* TEST BINLPT */
-    cksz = 1;
-    loop_id = omp_loop_register("testbinlpt");
-    while (cksz <= itersperthr) {
-        sprintf(testName, "BINLPT %d", cksz);
-        benchmark(testName, &testbinlpt);
-        cksz *= 2;
-    }
+    sprintf(testName, "BINLPT");
+    benchmark(testName, &testbinlpt);
 
     finalise();
 
@@ -157,6 +151,7 @@ void testguidedn() {
 void testbinlpt() {
     int i, j;
     unsigned workloads[itersperthr * nthreads];
+    unsigned loop_id = omp_loop_register("testbinlpt");
     for (i = 0; i < itersperthr * nthreads; i++) {
         workloads[i] = delaylength;
     }
