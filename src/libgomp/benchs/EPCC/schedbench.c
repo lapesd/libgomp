@@ -40,6 +40,7 @@
 #include "schedbench.h"
 
 int cksz, itersperthr = 128;
+unsigned loop_id;
 char testName[32];
 
 int main(int argc, char **argv) {
@@ -78,6 +79,7 @@ int main(int argc, char **argv) {
 
     /* TEST BINLPT */
     cksz = 1;
+    loop_id = omp_loop_register("testbinlpt");
     while (cksz <= itersperthr) {
         sprintf(testName, "BINLPT %d", cksz);
         benchmark(testName, &testbinlpt);
@@ -159,7 +161,7 @@ void testbinlpt() {
         workloads[i] = delaylength;
     }
     omp_set_schedule(omp_sched_binlpt, 0);
-    omp_set_workload(workloads, itersperthr * nthreads, false);
+    omp_set_workload(loop_id, workloads, itersperthr * nthreads, false);
 #pragma omp parallel private(j)
     {
         for (j = 0; j < innerreps; j++) {
