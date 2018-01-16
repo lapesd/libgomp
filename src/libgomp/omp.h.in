@@ -110,9 +110,8 @@ extern int omp_get_team_size (int) __GOMP_NOTHROW;
 extern int omp_get_active_level (void) __GOMP_NOTHROW;
 
 #include <stdbool.h>
-extern void omp_set_loop_workload(unsigned *, unsigned, bool, const char *, int);
-
-#define omp_set_workload(workloads, ntasks, override) omp_set_loop_workload(workloads, ntasks, override, __FILE__, __LINE__)
+extern void omp_set_workload(unsigned, unsigned *, unsigned, bool);
+extern unsigned omp_loop_register(const char *);
 
 extern int omp_in_final (void) __GOMP_NOTHROW;
 

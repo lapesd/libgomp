@@ -50,78 +50,63 @@ unsigned __ntasks;
 
 struct loop
 {
-  int line;
-  char *filename;
+  char *name;
   unsigned *taskmap;
   bool override;
 };
 
-static struct loop loops[NR_LOOPS] = { {-1, NULL, NULL} };
+static struct loop loops[NR_LOOPS] = { {NULL, NULL, false} };
 static int curr_loop = -1;
 
 unsigned __nchunks = 1;
 
 static void init_loop_struct(struct loop *loop,
-                             const char *file,
-                             int line) {
-  size_t filename_len = strlen(file) + 1;
-  loop->filename = calloc(filename_len, 1);
-  strncpy(loop->filename, file, filename_len);
-  loop->line = line;
+                             const char *name) {
+  size_t name_len = strlen(name) + 1;
+  loop->name = calloc(name_len, 1);
+  strncpy(loop->name, name, name_len);
+}
+
+/**
+ * @brief Register the next parallel loop to the runtime system.
+ *
+ * @param loop_name The name referring to this loop.
+ *
+ * @return Returns a unique ID for the loop.
+ */
+unsigned omp_loop_register(const char *loop_name)
+{
+  for (size_t i = 0; i < NR_LOOPS; i++) {
+    if (loops[i].name == NULL) {
+      init_loop_struct(&loops[i], loop_name);
+      return i;
+    }
+  }
+
+  fprintf(stderr, "[binlpt] Too many loops, aborting.\n");
+  abort();
+
+  return 0;
 }
 
 /**
  * @brief Sets the workload of the next parallel for loop.
  *
- * @param tasks  Load of iterations.
- * @param ntasks Number of tasks.
+ * @param loop_id     The ID of the loop to attach workload information to.
+ * @param tasks       Load of iterations.
+ * @param ntasks      Number of tasks.
+ * @param override    Boolean flag to decide whether we should compute the
+ *                    task mapping again or use the preexisting one.
  */
-void omp_set_loop_workload(unsigned *tasks,
-                           unsigned ntasks,
-                           bool override,
-                           const char *file,
-                           int line)
+void omp_set_workload(unsigned loop_id,
+                      unsigned *tasks,
+                      unsigned ntasks,
+                      bool override)
 {
-  int first_nil = -1;
-  int slot = -1;
+  assert((0 <= loop_id) && (loop_id < NR_LOOPS));
 
-	for (int i = 0; i < NR_LOOPS; i++)
-	{
-    struct loop *loop = &loops[i];
-		if (loop->taskmap == NULL && first_nil == -1)
-      first_nil = i;
-    if (loop->filename != NULL) {
-      if ((strcmp(loop->filename, file) == 0) && loop->line == line) {
-        slot = i;
-        break;
-      }
-    }
-	}
-
-  if (slot == -1) {
-    /* That's the first time we encounter this loop. */
-    if (first_nil != -1) {
-      /* There's an empty slot in the loops array. */
-      init_loop_struct(&loops[first_nil], file, line);
-      /* Force override to true, so we compute the task mapping whatever the
-         value of override is. */
-      loops[first_nil].override = true;
-      curr_loop = first_nil;
-    } else {
-      /* The loops array is full... */
-      fprintf(stderr, "[libgomp] Too many loops. Aborting.\n");
-      abort();
-    }
-  } else {
-    /* This loop has already been balanced, use the user-defined override
-       parameter to decide whether we should compute the task mapping again or
-       not. (see gomp_loop_init().)*/
-    loops[slot].override = override;
-    curr_loop = slot;
-  }
-
-  assert(curr_loop != -1);
-  //printf("[binlpt] using slot %i for loop %s:%i\n", curr_loop, file, line);
+  loops[loop_id].override = override;
+  curr_loop = loop_id;
 
 	__tasks = tasks;
 	__ntasks = ntasks;
@@ -511,13 +496,17 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
         }
 
       struct loop *loop = &loops[curr_loop];
-      if (loop->override) {
+      if (loop->override || loop->taskmap == NULL) {
         /* Refresh the mapping. */
+        if (loop->taskmap != NULL) {
+          free(loop->taskmap);
+        }
         loop->taskmap = balance(__tasks, __ntasks, num_threads);
       }
       ws->taskmap = loop->taskmap;
 
       ws->loop_start = start;
+
       ws->thread_start = (unsigned *) calloc(num_threads, sizeof(int));
     }
     break;

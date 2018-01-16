@@ -70,8 +70,10 @@ OMP_3.0 {
 	omp_get_schedule;
 	omp_get_schedule_;
 	omp_get_schedule_8_;
-	omp_set_loop_workload;
-	omp_set_loop_workload_;
+	omp_loop_register;
+	omp_loop_register_;
+	omp_set_workload;
+	omp_set_workload_;
 	omp_get_thread_limit;
 	omp_get_thread_limit_;
 	omp_set_max_active_levels;
