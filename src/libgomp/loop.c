@@ -127,8 +127,8 @@ void omp_set_workload(unsigned loop_id,
   loops[loop_id].override = override;
   curr_loop = loop_id;
 
-	__tasks = tasks;
-	__ntasks = ntasks;
+  __tasks = tasks;
+  __ntasks = ntasks;
 }
 
 /*============================================================================*
@@ -140,30 +140,33 @@ void omp_set_workload(unsigned loop_id,
 /*
  * Exchange two numbers.
  */
-#define exch(a, b, t) \
-	{ (t) = (a); (a) = (b); (b) = (t); }
+#define exch(a, b)                              \
+  do {                                          \
+    unsigned tmp = (a);                         \
+    (a) = (b);                                  \
+    (b) = tmp;                                  \
+  } while(0);
 
 /*
  * Insertion sort.
  */
 static void insertion(unsigned *map, unsigned *a, unsigned n)
 {
-	unsigned t;    /* Temporary value. */
-	unsigned i, j; /* Loop indexes.    */
-	
-	/* Sort. */
-	for (i = 0; i < (n - 1); i++)
-	{
-		for (j = i + 1; j < n; j++)
-		{
-			/* Swap. */
-			if (a[j] < a[i])
-			{
-				exch(a[i], a[j], t);
-				exch(map[i], map[j], t);
-			}
-		}
-	}
+  unsigned i, j; /* Loop indexes.    */
+
+  /* Sort. */
+  for (i = 0; i < (n - 1); i++)
+  {
+    for (j = i + 1; j < n; j++)
+    {
+      /* Swap. */
+      if (a[j] < a[i])
+      {
+        exch(a[i], a[j]);
+        exch(map[i], map[j]);
+      }
+    }
+  }
 }
 
 /*
@@ -171,47 +174,47 @@ static void insertion(unsigned *map, unsigned *a, unsigned n)
  */
 void quicksort(unsigned *map, unsigned *a, unsigned n)
 {
-	unsigned i, j;
-	unsigned p, t;
-    
-    /* End recursion. */
-	if (n < N)
-	{
-		insertion(map, a, n);
-		return;
-	}
-    
-	/* Pivot stuff. */
-	p = a[n/2];
-	for (i = 0, j = n - 1; /* noop */ ; i++, j--)
-	{
-		while (a[i] < p)
-			i++;
-		while (p < a[j])
-			j--;
-		if (i >= j)
-			break;
-		exch(a[i], a[j], t);
-		exch(map[i], map[j], t);
-	}
-    
-	quicksort(map, a, i);
-	quicksort(map, a + i, n - i);
+  unsigned i, j;
+  unsigned p;
+
+  /* End recursion. */
+  if (n < N)
+    {
+      insertion(map, a, n);
+      return;
+    }
+
+  /* Pivot stuff. */
+  p = a[n/2];
+  for (i = 0, j = n - 1; /* noop */ ; i++, j--)
+    {
+      while (a[i] < p)
+        i++;
+      while (p < a[j])
+        j--;
+      if (i >= j)
+        break;
+      exch(a[i], a[j]);
+      exch(map[i], map[j]);
+    }
+
+  quicksort(map, a, i);
+  quicksort(map, a + i, n - i);
 }
- 
+
 /*
  * Sorts an array of numbers.
  */
 void sort(unsigned *a, unsigned n, unsigned *map)
 {
-	unsigned i;	
+  unsigned i;
 
-	/* Create map. */
-	for (i = 0; i < n; i++)
-		map[i] = i;
+  /* Create map. */
+  for (i = 0; i < n; i++)
+    map[i] = i;
 
-	insertion(map, a, n);
-} 
+  insertion(map, a, n);
+}
 
 /*============================================================================*
  * SRR Loop Scheduler                                                         *
@@ -228,58 +231,58 @@ void sort(unsigned *a, unsigned n, unsigned *map)
  */
 static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads)
 {
-	unsigned k;               /* Scheduling offset. */
-	unsigned tid;             /* Current thread ID. */
-	unsigned i, j;            /* Loop indexes.      */
-	unsigned *taskmap;        /* Task map.          */
-	unsigned sortmap[ntasks]; /* Sorting map.       */
-	unsigned load[ntasks];    /* Assigned load.     */
+  unsigned k;               /* Scheduling offset. */
+  unsigned tid;             /* Current thread ID. */
+  unsigned i, j;            /* Loop indexes.      */
+  unsigned *taskmap;        /* Task map.          */
+  unsigned sortmap[ntasks]; /* Sorting map.       */
+  unsigned load[ntasks];    /* Assigned load.     */
 
-	/* Initialize scheduler data. */
-	taskmap = malloc(ntasks*sizeof(unsigned));
-	assert(taskmap != NULL);
-	memset(load, 0, ntasks * sizeof(unsigned));
+  /* Initialize scheduler data. */
+  taskmap = malloc(ntasks*sizeof(unsigned));
+  assert(taskmap != NULL);
+  memset(load, 0, ntasks * sizeof(unsigned));
 
-	/* Sort tasks. */
-	sort(tasks, ntasks, sortmap);
+  /* Sort tasks. */
+  sort(tasks, ntasks, sortmap);
 
-	/* Assign tasks to threads. */
-	tid = 0;
-	k = ntasks & 1;
+  /* Assign tasks to threads. */
+  tid = 0;
+  k = ntasks & 1;
 
-	for (i = k; i < k + (ntasks - k); i++)
-	{
-		unsigned l = sortmap[i];
-		unsigned r = sortmap[ntasks - ((i - k) + 1)];
+  for (i = k; i < k + (ntasks - k); i++)
+  {
+    unsigned l = sortmap[i];
+    unsigned r = sortmap[ntasks - ((i - k) + 1)];
 
-		taskmap[l] = tid;
-		taskmap[r] = tid;
+    taskmap[l] = tid;
+    taskmap[r] = tid;
 
-		load[tid] += tasks[l] + tasks[r];
+    load[tid] += tasks[l] + tasks[r];
 
-		/* Wrap around. */
-		tid = (tid + 1)%nthreads;
-	}
+    /* Wrap around. */
+    tid = (tid + 1)%nthreads;
+  }
 
-	/* Assign remaining tasks. */
-	for (i = k; i > 0; i--)
-	{
-		unsigned leastoverload;
+  /* Assign remaining tasks. */
+  for (i = k; i > 0; i--)
+  {
+    unsigned leastoverload;
 
-		/* Find least overload thread. */
-		leastoverload = 0;
-		for (j = 1; j < nthreads; j++)
-		{
-			if (load[j] < load[leastoverload])
-				leastoverload = j;
-		}
+    /* Find least overload thread. */
+    leastoverload = 0;
+    for (j = 1; j < nthreads; j++)
+    {
+      if (load[j] < load[leastoverload])
+        leastoverload = j;
+    }
 
-		taskmap[sortmap[i - 1]] = leastoverload;
+    taskmap[sortmap[i - 1]] = leastoverload;
 
-		load[leastoverload] += tasks[sortmap[i - 1]];
-	}
+    load[leastoverload] += tasks[sortmap[i - 1]];
+  }
 
-	return (taskmap);
+  return (taskmap);
 }
 
 /*============================================================================*
@@ -296,16 +299,16 @@ static unsigned *srr_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads
  */
 static unsigned *compute_cummulativesum(const unsigned *a, unsigned n)
 {
-	unsigned i;
-	unsigned *sum;
+  unsigned i;
+  unsigned *sum;
 
-	sum = malloc(n*sizeof(unsigned));
-	assert(sum != NULL);
+  sum = malloc(n*sizeof(unsigned));
+  assert(sum != NULL);
 
-	for (sum[0] = 0, i = 1; i < n; i++)
-		sum[i] = sum[i - 1] + a[i - 1];
+  for (sum[0] = 0, i = 1; i < n; i++)
+    sum[i] = sum[i - 1] + a[i - 1];
 
-	return (sum);
+  return (sum);
 }
 
 /**
@@ -319,40 +322,40 @@ static unsigned *compute_cummulativesum(const unsigned *a, unsigned n)
  */
 static unsigned *compute_chunksizes(const unsigned *tasks, unsigned ntasks, unsigned nchunks)
 {
-	unsigned i, k;
-	unsigned chunkweight;
-	unsigned *chunksizes, *workload;
+  unsigned i, k;
+  unsigned chunkweight;
+  unsigned *chunksizes, *workload;
 
-	chunksizes = calloc(nchunks, sizeof(unsigned));
-	assert(chunksizes != NULL);
-	
-	workload = compute_cummulativesum(tasks, ntasks);
+  chunksizes = calloc(nchunks, sizeof(unsigned));
+  assert(chunksizes != NULL);
 
-	chunkweight = (workload[ntasks - 1] + tasks[ntasks - 1])/nchunks;
+  workload = compute_cummulativesum(tasks, ntasks);
 
-	/* Compute chunksizes. */
-	for (k = 0, i = 0; i < ntasks; /* noop */)
-	{
-		unsigned j = ntasks;
+  chunkweight = (workload[ntasks - 1] + tasks[ntasks - 1])/nchunks;
 
-		if (k < (nchunks - 1))
-		{
-			for (j = i + 1; j < ntasks; j++)
-			{
-				if (workload[j] - workload[i] > chunkweight)
-					break;
-			}
-		}
+  /* Compute chunksizes. */
+  for (k = 0, i = 0; i < ntasks; /* noop */)
+  {
+    unsigned j = ntasks;
 
-		chunksizes[k] = j - i;
-		i = j;
-		k++;
-	}
+    if (k < (nchunks - 1))
+    {
+      for (j = i + 1; j < ntasks; j++)
+      {
+        if (workload[j] - workload[i] > chunkweight)
+          break;
+      }
+    }
 
-	/* House keeping. */
-	free(workload);
+    chunksizes[k] = j - i;
+    i = j;
+    k++;
+  }
 
-	return (chunksizes);
+  /* House keeping. */
+  free(workload);
+
+  return (chunksizes);
 }
 
 /**
@@ -360,24 +363,24 @@ static unsigned *compute_chunksizes(const unsigned *tasks, unsigned ntasks, unsi
  */
 static unsigned *compute_chunks(const unsigned *tasks, unsigned ntasks, const unsigned *chunksizes, unsigned nchunks)
 {
-	unsigned i, k;    /* Loop indexes. */
-	unsigned *chunks; /* Chunks.       */
+  unsigned i, k;    /* Loop indexes. */
+  unsigned *chunks; /* Chunks.       */
 
-	chunks = calloc(nchunks, sizeof(unsigned));
-	assert(chunks != NULL);
+  chunks = calloc(nchunks, sizeof(unsigned));
+  assert(chunks != NULL);
 
-	/* Compute chunks. */
-	for (i = 0, k = 0; i < nchunks; i++)
-	{
-		unsigned j;
+  /* Compute chunks. */
+  for (i = 0, k = 0; i < nchunks; i++)
+  {
+    unsigned j;
 
-		assert(k <= ntasks);
+    assert(k <= ntasks);
 
-		for (j = 0; j < chunksizes[i]; j++)
-			chunks[i] += tasks[k++];
-	}
+    for (j = 0; j < chunksizes[i]; j++)
+      chunks[i] += tasks[k++];
+  }
 
-	return (chunks);
+  return (chunks);
 }
 
 /**
@@ -385,56 +388,56 @@ static unsigned *compute_chunks(const unsigned *tasks, unsigned ntasks, const un
  */
 static unsigned *binlpt_balance(unsigned *tasks, unsigned ntasks, unsigned nthreads)
 {
-	unsigned i;               /* Loop index.       */
-	unsigned *taskmap;        /* Task map.         */
-	unsigned sortmap[ntasks]; /* Sorting map.       */
-	unsigned *load;           /* Assigned load.    */
-	unsigned *chunksizes;     /* Chunks sizes.     */
-	unsigned *chunks;         /* Chunks.           */
-	unsigned *chunkoff;       /* Offset to chunks. */
+  unsigned i;               /* Loop index.       */
+  unsigned *taskmap;        /* Task map.         */
+  unsigned sortmap[ntasks]; /* Sorting map.       */
+  unsigned *load;           /* Assigned load.    */
+  unsigned *chunksizes;     /* Chunks sizes.     */
+  unsigned *chunks;         /* Chunks.           */
+  unsigned *chunkoff;       /* Offset to chunks. */
 
   //printf("[binlpt] Balancing loop %s:%i\n", loops[curr_loop].filename, loops[curr_loop].line);
 
-	/* Initialize scheduler data. */
-	taskmap = calloc(ntasks, sizeof(unsigned));
-	assert(taskmap != NULL);
-	load = calloc(nthreads, sizeof(unsigned));
-	assert(load != NULL);
+  /* Initialize scheduler data. */
+  taskmap = calloc(ntasks, sizeof(unsigned));
+  assert(taskmap != NULL);
+  load = calloc(nthreads, sizeof(unsigned));
+  assert(load != NULL);
 
-	chunksizes = compute_chunksizes(tasks, ntasks, __nchunks);
-	chunks = compute_chunks(tasks, ntasks, chunksizes, __nchunks);
-	chunkoff = compute_cummulativesum(chunksizes, __nchunks);
+  chunksizes = compute_chunksizes(tasks, ntasks, __nchunks);
+  chunks = compute_chunks(tasks, ntasks, chunksizes, __nchunks);
+  chunkoff = compute_cummulativesum(chunksizes, __nchunks);
 
-	/* Sort tasks. */
-	sort(chunks, __nchunks, sortmap);
-	
-	for (i = __nchunks; i > 0; i--)
-	{
-		unsigned j;
-		unsigned tid;
+  /* Sort tasks. */
+  sort(chunks, __nchunks, sortmap);
 
-		if (chunks[i - 1] == 0)
-			continue;
+  for (i = __nchunks; i > 0; i--)
+  {
+    unsigned j;
+    unsigned tid;
 
-		tid = 0;
-		for (j = 1; j < nthreads; j++)
-		{
-			if (load[j] < load[tid])
-				tid = j;
-		}
+    if (chunks[i - 1] == 0)
+      continue;
 
-		for (j = 0; j < chunksizes[sortmap[i - 1]]; j++)
-			taskmap[chunkoff[sortmap[i - 1]] + j] = tid;
-		load[tid] += chunks[i - 1];
-	}
+    tid = 0;
+    for (j = 1; j < nthreads; j++)
+    {
+      if (load[j] < load[tid])
+        tid = j;
+    }
 
-	/* House keeping. */
-	free(chunkoff);
-	free(chunks);
-	free(chunksizes);
-	free(load);
-	
-	return (taskmap);
+    for (j = 0; j < chunksizes[sortmap[i - 1]]; j++)
+      taskmap[chunkoff[sortmap[i - 1]] + j] = tid;
+    load[tid] += chunks[i - 1];
+  }
+
+  /* House keeping. */
+  free(chunkoff);
+  free(chunks);
+  free(chunksizes);
+  free(load);
+
+  return (taskmap);
 }
 
 /*============================================================================*
@@ -445,7 +448,7 @@ static unsigned *binlpt_balance(unsigned *tasks, unsigned ntasks, unsigned nthre
 
 static inline void
 gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
-		enum gomp_schedule_type sched, long chunk_size, unsigned num_threads)
+    enum gomp_schedule_type sched, long chunk_size, unsigned num_threads)
 {
   ws->sched = sched;
   ws->chunk_size = chunk_size;
@@ -536,7 +539,7 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
 
 static bool
 gomp_loop_static_start (long start, long end, long incr, long chunk_size,
-			long *istart, long *iend)
+      long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
 
@@ -544,7 +547,7 @@ gomp_loop_static_start (long start, long end, long incr, long chunk_size,
   if (gomp_work_share_start (false))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_STATIC, chunk_size, 0);
+          GFS_STATIC, chunk_size, 0);
       gomp_work_share_init_done ();
     }
 
@@ -553,7 +556,7 @@ gomp_loop_static_start (long start, long end, long incr, long chunk_size,
 
 static bool
 gomp_loop_dynamic_start (long start, long end, long incr, long chunk_size,
-			 long *istart, long *iend)
+       long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
   bool ret;
@@ -561,7 +564,7 @@ gomp_loop_dynamic_start (long start, long end, long incr, long chunk_size,
   if (gomp_work_share_start (false))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_DYNAMIC, chunk_size, 0);
+          GFS_DYNAMIC, chunk_size, 0);
       gomp_work_share_init_done ();
     }
 
@@ -578,7 +581,7 @@ gomp_loop_dynamic_start (long start, long end, long incr, long chunk_size,
 
 static bool
 gomp_loop_guided_start (long start, long end, long incr, long chunk_size,
-			long *istart, long *iend)
+      long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
   bool ret;
@@ -586,7 +589,7 @@ gomp_loop_guided_start (long start, long end, long incr, long chunk_size,
   if (gomp_work_share_start (false))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_GUIDED, chunk_size, 0);
+          GFS_GUIDED, chunk_size, 0);
       gomp_work_share_init_done ();
     }
 
@@ -603,7 +606,7 @@ gomp_loop_guided_start (long start, long end, long incr, long chunk_size,
 
 static bool
 gomp_loop_binlpt_start (long start, long end, long incr, long chunk_size,
-		       long *istart, long *iend)
+           long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
   bool ret;
@@ -611,7 +614,7 @@ gomp_loop_binlpt_start (long start, long end, long incr, long chunk_size,
   if (gomp_work_share_start (false))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_BINLPT, chunk_size, 0);
+          GFS_BINLPT, chunk_size, 0);
       gomp_work_share_init_done ();
     }
 
@@ -622,7 +625,7 @@ gomp_loop_binlpt_start (long start, long end, long incr, long chunk_size,
 
 static bool
 gomp_loop_srr_start (long start, long end, long incr, long chunk_size,
-		       long *istart, long *iend)
+           long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
   bool ret;
@@ -630,7 +633,7 @@ gomp_loop_srr_start (long start, long end, long incr, long chunk_size,
   if (gomp_work_share_start (false))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_SRR, chunk_size, 0);
+          GFS_SRR, chunk_size, 0);
       gomp_work_share_init_done ();
     }
 
@@ -641,20 +644,20 @@ gomp_loop_srr_start (long start, long end, long incr, long chunk_size,
 
 bool
 GOMP_loop_runtime_start (long start, long end, long incr,
-			 long *istart, long *iend)
+       long *istart, long *iend)
 {
   struct gomp_task_icv *icv = gomp_icv (false);
   switch (icv->run_sched_var)
     {
     case GFS_STATIC:
       return gomp_loop_static_start (start, end, incr, icv->run_sched_modifier,
-				     istart, iend);
+             istart, iend);
     case GFS_DYNAMIC:
       return gomp_loop_dynamic_start (start, end, incr, icv->run_sched_modifier,
-				      istart, iend);
+              istart, iend);
     case GFS_GUIDED:
       return gomp_loop_guided_start (start, end, incr, icv->run_sched_modifier,
-				     istart, iend);
+             istart, iend);
 
     case GFS_BINLPT:
       return gomp_loop_binlpt_start (start, end, incr, icv->run_sched_modifier, istart, iend);
@@ -663,7 +666,7 @@ GOMP_loop_runtime_start (long start, long end, long incr,
 
     case GFS_AUTO:
       /* For now map to schedule(static), later on we could play with feedback
-	 driven choice.  */
+   driven choice.  */
       return gomp_loop_static_start (start, end, incr, 0, istart, iend);
     default:
       abort ();
@@ -675,7 +678,7 @@ GOMP_loop_runtime_start (long start, long end, long incr,
 
 static bool
 gomp_loop_ordered_static_start (long start, long end, long incr,
-				long chunk_size, long *istart, long *iend)
+        long chunk_size, long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
 
@@ -683,7 +686,7 @@ gomp_loop_ordered_static_start (long start, long end, long incr,
   if (gomp_work_share_start (true))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_STATIC, chunk_size, 0);
+          GFS_STATIC, chunk_size, 0);
       gomp_ordered_static_init ();
       gomp_work_share_init_done ();
     }
@@ -693,7 +696,7 @@ gomp_loop_ordered_static_start (long start, long end, long incr,
 
 static bool
 gomp_loop_ordered_dynamic_start (long start, long end, long incr,
-				 long chunk_size, long *istart, long *iend)
+         long chunk_size, long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
   bool ret;
@@ -701,7 +704,7 @@ gomp_loop_ordered_dynamic_start (long start, long end, long incr,
   if (gomp_work_share_start (true))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_DYNAMIC, chunk_size, 0);
+          GFS_DYNAMIC, chunk_size, 0);
       gomp_mutex_lock (&thr->ts.work_share->lock);
       gomp_work_share_init_done ();
     }
@@ -718,7 +721,7 @@ gomp_loop_ordered_dynamic_start (long start, long end, long incr,
 
 static bool
 gomp_loop_ordered_guided_start (long start, long end, long incr,
-				long chunk_size, long *istart, long *iend)
+        long chunk_size, long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
   bool ret;
@@ -726,7 +729,7 @@ gomp_loop_ordered_guided_start (long start, long end, long incr,
   if (gomp_work_share_start (true))
     {
       gomp_loop_init (thr->ts.work_share, start, end, incr,
-		      GFS_GUIDED, chunk_size, 0);
+          GFS_GUIDED, chunk_size, 0);
       gomp_mutex_lock (&thr->ts.work_share->lock);
       gomp_work_share_init_done ();
     }
@@ -743,35 +746,35 @@ gomp_loop_ordered_guided_start (long start, long end, long incr,
 
 bool
 GOMP_loop_ordered_runtime_start (long start, long end, long incr,
-				 long *istart, long *iend)
+         long *istart, long *iend)
 {
   struct gomp_task_icv *icv = gomp_icv (false);
   switch (icv->run_sched_var)
     {
     case GFS_STATIC:
       return gomp_loop_ordered_static_start (start, end, incr,
-					     icv->run_sched_modifier,
-					     istart, iend);
+               icv->run_sched_modifier,
+               istart, iend);
     case GFS_DYNAMIC:
       return gomp_loop_ordered_dynamic_start (start, end, incr,
-					      icv->run_sched_modifier,
-					      istart, iend);
+                icv->run_sched_modifier,
+                istart, iend);
     case GFS_GUIDED:
       return gomp_loop_ordered_guided_start (start, end, incr,
-					     icv->run_sched_modifier,
-					     istart, iend);
+               icv->run_sched_modifier,
+               istart, iend);
     case GFS_AUTO:
       /* For now map to schedule(static), later on we could play with feedback
-	 driven choice.  */
+   driven choice.  */
       return gomp_loop_ordered_static_start (start, end, incr,
-					     0, istart, iend);
+               0, istart, iend);
     default:
       abort ();
     }
 }
 
-/* The *_next routines are called when the thread completes processing of 
-   the iteration block currently assigned to it.  If the work-share 
+/* The *_next routines are called when the thread completes processing of
+   the iteration block currently assigned to it.  If the work-share
    construct is bound directly to a parallel construct, then the iteration
    bounds may have been set up before the parallel.  In which case, this
    may be the first iteration for the thread.
@@ -918,7 +921,7 @@ bool
 GOMP_loop_ordered_runtime_next (long *istart, long *iend)
 {
   struct gomp_thread *thr = gomp_thread ();
-  
+
   switch (thr->ts.work_share->sched)
     {
     case GFS_STATIC:
@@ -938,9 +941,9 @@ GOMP_loop_ordered_runtime_next (long *istart, long *iend)
 
 static void
 gomp_parallel_loop_start (void (*fn) (void *), void *data,
-			  unsigned num_threads, long start, long end,
-			  long incr, enum gomp_schedule_type sched,
-			  long chunk_size, unsigned int flags)
+        unsigned num_threads, long start, long end,
+        long incr, enum gomp_schedule_type sched,
+        long chunk_size, unsigned int flags)
 {
   struct gomp_team *team;
 
@@ -952,85 +955,85 @@ gomp_parallel_loop_start (void (*fn) (void *), void *data,
 
 void
 GOMP_parallel_loop_static_start (void (*fn) (void *), void *data,
-				 unsigned num_threads, long start, long end,
-				 long incr, long chunk_size)
+         unsigned num_threads, long start, long end,
+         long incr, long chunk_size)
 {
   gomp_parallel_loop_start (fn, data, num_threads, start, end, incr,
-			    GFS_STATIC, chunk_size, 0);
+          GFS_STATIC, chunk_size, 0);
 }
 
 void
 GOMP_parallel_loop_dynamic_start (void (*fn) (void *), void *data,
-				  unsigned num_threads, long start, long end,
-				  long incr, long chunk_size)
+          unsigned num_threads, long start, long end,
+          long incr, long chunk_size)
 {
   gomp_parallel_loop_start (fn, data, num_threads, start, end, incr,
-			    GFS_DYNAMIC, chunk_size, 0);
+          GFS_DYNAMIC, chunk_size, 0);
 }
 
 void
 GOMP_parallel_loop_guided_start (void (*fn) (void *), void *data,
-				 unsigned num_threads, long start, long end,
-				 long incr, long chunk_size)
+         unsigned num_threads, long start, long end,
+         long incr, long chunk_size)
 {
   gomp_parallel_loop_start (fn, data, num_threads, start, end, incr,
-			    GFS_GUIDED, chunk_size, 0);
+          GFS_GUIDED, chunk_size, 0);
 }
 
 void
 GOMP_parallel_loop_runtime_start (void (*fn) (void *), void *data,
-				  unsigned num_threads, long start, long end,
-				  long incr)
+          unsigned num_threads, long start, long end,
+          long incr)
 {
   struct gomp_task_icv *icv = gomp_icv (false);
   gomp_parallel_loop_start (fn, data, num_threads, start, end, incr,
-			    icv->run_sched_var, icv->run_sched_modifier, 0);
+          icv->run_sched_var, icv->run_sched_modifier, 0);
 }
 
 ialias_redirect (GOMP_parallel_end)
 
 void
 GOMP_parallel_loop_static (void (*fn) (void *), void *data,
-			   unsigned num_threads, long start, long end,
-			   long incr, long chunk_size, unsigned flags)
+         unsigned num_threads, long start, long end,
+         long incr, long chunk_size, unsigned flags)
 {
   gomp_parallel_loop_start (fn, data, num_threads, start, end, incr,
-			    GFS_STATIC, chunk_size, flags);
+          GFS_STATIC, chunk_size, flags);
   fn (data);
   GOMP_parallel_end ();
 }
 
 void
 GOMP_parallel_loop_dynamic (void (*fn) (void *), void *data,
-			    unsigned num_threads, long start, long end,
-			    long incr, long chunk_size, unsigned flags)
+          unsigned num_threads, long start, long end,
+          long incr, long chunk_size, unsigned flags)
 {
   gomp_parallel_loop_start (fn, data, num_threads, start, end, incr,
-			    GFS_DYNAMIC, chunk_size, flags);
+          GFS_DYNAMIC, chunk_size, flags);
   fn (data);
   GOMP_parallel_end ();
 }
 
 void
 GOMP_parallel_loop_guided (void (*fn) (void *), void *data,
-			  unsigned num_threads, long start, long end,
-			  long incr, long chunk_size, unsigned flags)
+        unsigned num_threads, long start, long end,
+        long incr, long chunk_size, unsigned flags)
 {
   gomp_parallel_loop_start (fn, data, num_threads, start, end, incr,
-			    GFS_GUIDED, chunk_size, flags);
+          GFS_GUIDED, chunk_size, flags);
   fn (data);
   GOMP_parallel_end ();
 }
 
 void
 GOMP_parallel_loop_runtime (void (*fn) (void *), void *data,
-			    unsigned num_threads, long start, long end,
-			    long incr, unsigned flags)
+          unsigned num_threads, long start, long end,
+          long incr, unsigned flags)
 {
   struct gomp_task_icv *icv = gomp_icv (false);
   gomp_parallel_loop_start (fn, data, num_threads, start, end, incr,
-			    icv->run_sched_var, icv->run_sched_modifier,
-			    flags);
+          icv->run_sched_var, icv->run_sched_modifier,
+          flags);
   fn (data);
   GOMP_parallel_end ();
 }
@@ -1066,76 +1069,76 @@ GOMP_loop_end_nowait (void)
 
 #ifdef HAVE_ATTRIBUTE_ALIAS
 extern __typeof(gomp_loop_static_start) GOMP_loop_static_start
-	__attribute__((alias ("gomp_loop_static_start")));
+  __attribute__((alias ("gomp_loop_static_start")));
 extern __typeof(gomp_loop_dynamic_start) GOMP_loop_dynamic_start
-	__attribute__((alias ("gomp_loop_dynamic_start")));
+  __attribute__((alias ("gomp_loop_dynamic_start")));
 extern __typeof(gomp_loop_guided_start) GOMP_loop_guided_start
-	__attribute__((alias ("gomp_loop_guided_start")));
+  __attribute__((alias ("gomp_loop_guided_start")));
 
 extern __typeof(gomp_loop_ordered_static_start) GOMP_loop_ordered_static_start
-	__attribute__((alias ("gomp_loop_ordered_static_start")));
+  __attribute__((alias ("gomp_loop_ordered_static_start")));
 extern __typeof(gomp_loop_ordered_dynamic_start) GOMP_loop_ordered_dynamic_start
-	__attribute__((alias ("gomp_loop_ordered_dynamic_start")));
+  __attribute__((alias ("gomp_loop_ordered_dynamic_start")));
 extern __typeof(gomp_loop_ordered_guided_start) GOMP_loop_ordered_guided_start
-	__attribute__((alias ("gomp_loop_ordered_guided_start")));
+  __attribute__((alias ("gomp_loop_ordered_guided_start")));
 
 extern __typeof(gomp_loop_static_next) GOMP_loop_static_next
-	__attribute__((alias ("gomp_loop_static_next")));
+  __attribute__((alias ("gomp_loop_static_next")));
 extern __typeof(gomp_loop_dynamic_next) GOMP_loop_dynamic_next
-	__attribute__((alias ("gomp_loop_dynamic_next")));
+  __attribute__((alias ("gomp_loop_dynamic_next")));
 extern __typeof(gomp_loop_guided_next) GOMP_loop_guided_next
-	__attribute__((alias ("gomp_loop_guided_next")));
+  __attribute__((alias ("gomp_loop_guided_next")));
 
 extern __typeof(gomp_loop_ordered_static_next) GOMP_loop_ordered_static_next
-	__attribute__((alias ("gomp_loop_ordered_static_next")));
+  __attribute__((alias ("gomp_loop_ordered_static_next")));
 extern __typeof(gomp_loop_ordered_dynamic_next) GOMP_loop_ordered_dynamic_next
-	__attribute__((alias ("gomp_loop_ordered_dynamic_next")));
+  __attribute__((alias ("gomp_loop_ordered_dynamic_next")));
 extern __typeof(gomp_loop_ordered_guided_next) GOMP_loop_ordered_guided_next
-	__attribute__((alias ("gomp_loop_ordered_guided_next")));
+  __attribute__((alias ("gomp_loop_ordered_guided_next")));
 #else
 bool
 GOMP_loop_static_start (long start, long end, long incr, long chunk_size,
-			long *istart, long *iend)
+      long *istart, long *iend)
 {
   return gomp_loop_static_start (start, end, incr, chunk_size, istart, iend);
 }
 
 bool
 GOMP_loop_dynamic_start (long start, long end, long incr, long chunk_size,
-			 long *istart, long *iend)
+       long *istart, long *iend)
 {
   return gomp_loop_dynamic_start (start, end, incr, chunk_size, istart, iend);
 }
 
 bool
 GOMP_loop_guided_start (long start, long end, long incr, long chunk_size,
-			long *istart, long *iend)
+      long *istart, long *iend)
 {
   return gomp_loop_guided_start (start, end, incr, chunk_size, istart, iend);
 }
 
 bool
 GOMP_loop_ordered_static_start (long start, long end, long incr,
-				long chunk_size, long *istart, long *iend)
+        long chunk_size, long *istart, long *iend)
 {
   return gomp_loop_ordered_static_start (start, end, incr, chunk_size,
-					 istart, iend);
+           istart, iend);
 }
 
 bool
 GOMP_loop_ordered_dynamic_start (long start, long end, long incr,
-				 long chunk_size, long *istart, long *iend)
+         long chunk_size, long *istart, long *iend)
 {
   return gomp_loop_ordered_dynamic_start (start, end, incr, chunk_size,
-					  istart, iend);
+            istart, iend);
 }
 
 bool
 GOMP_loop_ordered_guided_start (long start, long end, long incr,
-				long chunk_size, long *istart, long *iend)
+        long chunk_size, long *istart, long *iend)
 {
   return gomp_loop_ordered_guided_start (start, end, incr, chunk_size,
-					 istart, iend);
+           istart, iend);
 }
 
 bool
