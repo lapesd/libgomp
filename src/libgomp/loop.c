@@ -89,6 +89,11 @@ unsigned omp_loop_register(const char *loop_name)
   return 0;
 }
 
+/**
+ * @brief Unregister the loop identified by the loop_id ID.
+ *
+ * @param loop_id The ID of the loop to unregister (the one obtained executing omp_loop_register)
+ */
 void omp_loop_unregister(unsigned loop_id)
 {
   assert((loop_id >= 0) && (loop_id < NR_LOOPS));
@@ -493,7 +498,6 @@ gomp_loop_init (struct gomp_work_share *ws, long start, long end, long incr,
           struct gomp_team *team = thr->ts.team;
           num_threads = (team != NULL) ? team->nthreads : 1;
         }
-
       __nchunks = chunk_size;
       if (__nchunks == 1)
         __nchunks = num_threads;
