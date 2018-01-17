@@ -383,6 +383,20 @@ static unsigned *compute_chunks(const unsigned *tasks, unsigned ntasks, const un
   return (chunks);
 }
 
+static inline void __print_binlpt_debug(unsigned *taskmap,
+                                        unsigned *tasks,
+                                        unsigned ntasks)
+{
+  if (gomp_binlpt_debug_var) {
+    fprintf(stderr, "[binlpt debug info begin]\n");
+    fprintf(stderr, "\tTask mapping for loop %s:\n", loops[curr_loop].name);
+    for (unsigned i = 0; i < ntasks; i++) {
+      fprintf(stderr, "\t\t%4u -> t%i\t(load %u)\n", i, taskmap[i], tasks[i]);
+    }
+    fprintf(stderr, "[binlpt debug info end]\n");
+  }
+}
+
 /**
  * @brief Bin Packing Longest Processing Time First loop scheduler.
  */
@@ -437,14 +451,7 @@ static unsigned *binlpt_balance(unsigned *tasks, unsigned ntasks, unsigned nthre
   free(chunksizes);
   free(load);
 
-  if (gomp_binlpt_debug_var) {
-    fprintf(stderr, "[binlpt debug info begin]\n");
-    fprintf(stderr, "\tTask mapping for loop %s:\n", loops[curr_loop].name);
-    for (unsigned i = 0; i < ntasks; i++) {
-      fprintf(stderr, "\t\t%4u -> t%i\t(load %u)\n", i, taskmap[i], tasks[i]);
-    }
-    fprintf(stderr, "[binlpt debug info end]\n");
-  }
+  __print_binlpt_debug(taskmap, tasks, ntasks);
 
   return (taskmap);
 }
