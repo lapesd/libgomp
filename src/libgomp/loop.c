@@ -89,6 +89,16 @@ unsigned omp_loop_register(const char *loop_name)
   return 0;
 }
 
+void omp_loop_unregister(unsigned loop_id)
+{
+  assert((loop_id >= 0) && (loop_id < NR_LOOPS));
+
+  free(loops[loop_id].taskmap);
+  free(loops[loop_id].name);
+  loops[loop_id].taskmap = NULL;
+  loops[loop_id].name = NULL;
+}
+
 /**
  * @brief Sets the workload of the next parallel for loop.
  *

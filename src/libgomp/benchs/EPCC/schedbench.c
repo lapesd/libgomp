@@ -166,5 +166,6 @@ void testbinlpt() {
             }
         }
     }
+    omp_loop_unregister(loop_id);
 }
 

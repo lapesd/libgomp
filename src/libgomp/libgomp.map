@@ -72,6 +72,8 @@ OMP_3.0 {
 	omp_get_schedule_8_;
 	omp_loop_register;
 	omp_loop_register_;
+	omp_loop_unregister;
+	omp_loop_unregister_;
 	omp_set_workload;
 	omp_set_workload_;
 	omp_get_thread_limit;
