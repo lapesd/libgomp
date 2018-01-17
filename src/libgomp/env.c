@@ -1339,14 +1339,14 @@ omp_set_schedule (omp_sched_t kind, int modifier)
       icv->run_sched_modifier = modifier;
       break;
     case omp_sched_dynamic:
+    case omp_sched_binlpt:
+    case omp_sched_srr:
     case omp_sched_guided:
       if (modifier < 1)
 	modifier = 1;
       icv->run_sched_modifier = modifier;
       break;
     case omp_sched_auto:
-    case omp_sched_binlpt:
-    case omp_sched_srr:
       break;
     default:
       return;
