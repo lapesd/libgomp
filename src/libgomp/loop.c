@@ -437,6 +437,15 @@ static unsigned *binlpt_balance(unsigned *tasks, unsigned ntasks, unsigned nthre
   free(chunksizes);
   free(load);
 
+  if (gomp_binlpt_debug_var) {
+    fprintf(stderr, "[binlpt debug info begin]\n");
+    fprintf(stderr, "\tTask mapping for loop %s:\n", loops[curr_loop].name);
+    for (unsigned i = 0; i < ntasks; i++) {
+      fprintf(stderr, "\t\t%4u -> t%i\t(load %u)\n", i, taskmap[i], tasks[i]);
+    }
+    fprintf(stderr, "[binlpt debug info end]\n");
+  }
+
   return (taskmap);
 }
 

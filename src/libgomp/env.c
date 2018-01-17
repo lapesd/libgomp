@@ -66,6 +66,7 @@ struct gomp_task_icv gomp_global_icv = {
 
 unsigned long gomp_max_active_levels_var = INT_MAX;
 bool gomp_cancel_var = false;
+bool gomp_binlpt_debug_var = false;
 #ifndef HAVE_SYNC_BUILTINS
 gomp_mutex_t gomp_managed_threads_lock;
 #endif
@@ -1189,6 +1190,7 @@ initialize_env (void)
   parse_boolean ("OMP_DYNAMIC", &gomp_global_icv.dyn_var);
   parse_boolean ("OMP_NESTED", &gomp_global_icv.nest_var);
   parse_boolean ("OMP_CANCELLATION", &gomp_cancel_var);
+  parse_boolean ("OMP_BINLPT_DEBUG", &gomp_binlpt_debug_var);
   parse_int ("OMP_DEFAULT_DEVICE", &gomp_global_icv.default_device_var, true);
   parse_unsigned_long ("OMP_MAX_ACTIVE_LEVELS", &gomp_max_active_levels_var,
 		       true);
